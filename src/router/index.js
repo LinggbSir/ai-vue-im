@@ -13,11 +13,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Login',
-      component: Login
+      redirect: '/login'
     },
     {
-      path: '/l   ogin',
+      path: '/login',
       name: 'Login',
       component: Login
     },
@@ -56,6 +55,13 @@ const router = createRouter({
       ]
     }
   ]
+})
+
+console.log('注册的路由:', router.getRoutes().map(r => r.path))
+
+router.beforeEach((to, from, next) => {
+  console.log('当前导航目标:', to.path)
+  next()
 })
 
 export default router

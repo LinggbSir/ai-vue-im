@@ -19,6 +19,11 @@ export default defineConfig([
       },
     },
   },
+  {
+    env:{
+      node:true
+    }
+  },
 
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
