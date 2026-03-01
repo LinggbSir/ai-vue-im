@@ -7,6 +7,7 @@ const { Server } = require('socket.io')
 require('dotenv').config()
 
 const router = require('./routes')
+router.prefix('/api')
 
 // 初始化 Koa 应用，创建 HTTP 服务器和 Socket.IO 实例
 const app = new Koa()

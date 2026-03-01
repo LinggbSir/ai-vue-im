@@ -17,7 +17,7 @@
       <div class="login-card">
         <h2>欢迎回来</h2>
         <p class="tip">使用你的账号登录</p>
-        <form @submit.prevent="handleLogin">
+        <form @submit.prevent="handleSubmit">
           <div class="form-item">
             <input 
               type="text" 
@@ -34,16 +34,20 @@
               required
             />
           </div>
-          <div class="form-item remember">
+          <div class="form-item remember"  v-if="isLoginMode" >
             <label>
               <input type="checkbox" v-model="remember" /> 记住我
             </label>
             <a href="#">忘记密码？</a>
           </div>
-          <button type="submit" class="login-btn">登 录</button>
+          <button class="login-btn" v-if="isLoginMode" :disabled="loading" type="submit" >登 录</button>
+          <button class="login-btn" v-else :disabled="loading" type="submit">注 册</button>
         </form>
-        <p class="register">
-          还没有账号？<a href="#">立即注册</a>
+        <p v-if="isLoginMode" class="register">
+          还没有账号？<a href="#" @click="toggleLoginMode">立即注册</a>
+        </p>
+        <p v-else class="register">
+          已注册？<a href="#" @click="toggleLoginMode">返回登录</a>
         </p>
       </div>
     </div>
@@ -58,23 +62,106 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 // const userStore = useUserStore()
 
+const isLoginMode = ref(true)
+const loading = ref(false)
+const toRegister = () => {
+  isLoginMode.value = false
+} 
+const toggleLoginMode = () => {
+  isLoginMode.value = !isLoginMode.value
+}
+
 const username = ref('')
 const password = ref('')
 const remember = ref(false)
 
-const handleLogin = () => {
-  // 模拟登录，实际应调用后端 API
-  // 这里简单处理：只要输入了用户名和密码就跳转到聊天页
+const login = () => {
+  // 登录逻辑
   if (username.value && password.value) {
-    // 模拟存储 token 等
-    localStorage.setItem('token', 'fake-token')
-    // 跳转到主页（即 /，会重定向到 /chat）
-    console.log('跳转到：', '/chat')
+    // 登录并发送请求
+    const requestBody = {
+      username: username.value,
+      password: password.value
+    }
+    // 登录并发送请求
+    fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // 本地存储 token
+        localStorage.setItem('token', data.token)
+        // 登录成功，跳转到聊天页
+        router.push('/chat')
+      } else {
+        alert('登录失败：' + data.message)
+      }
+    })
+    .catch(error => {
+      console.error('登录错误:', error)
+      alert('登录过程中发生错误')
+    })
+
     router.push('/chat')
+  } else if (!isLoginMode.value && username.value && password.value) {
+    register()
   } else {
     alert('请输入用户名和密码')
   }
 }
+const register = () => {
+  // 注册逻辑
+  if (username.value && password.value) {
+    // 注册并发送请求
+    const requestBody = {
+      username: username.value,
+      password: password.value
+    }
+    // 注册并发送请求
+    fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // 本地存储 token
+        localStorage.setItem('token', data.token)
+        // 注册成功，跳转到登录页
+        router.push('/login')
+      } else {
+        alert('注册失败：' + data.message)
+      }
+    })
+    .catch(error => {
+      console.error('注册错误:', error)
+      alert('注册过程中发生错误')
+    })
+  }
+}
+
+const handleSubmit = async () => {
+  loading.value = true
+  if (!username.value || !password.value) {
+    alert('请输入用户名和密码')
+    return
+  }
+  if (isLoginMode.value) {
+    await login()
+  } else {
+    await register()
+  }
+  loading.value = false
+}
+
 </script>
 
 <style scoped>

@@ -6,10 +6,10 @@ module.exports = {
     const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username])
     return rows[0]
   },
-  async createUser(username, password, nickname) {
+  async createUser(username, hashedPassword) {
     const [result] = await pool.query(
-      'INSERT INTO users (username, password, nickname) VALUES (?, ?, ?)',
-      [username, password, nickname]
+      'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+      [username, hashedPassword]
     )
     return result.insertId
   },
