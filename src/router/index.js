@@ -1,23 +1,61 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import Login from '@/views/Login.vue'
+import MainLayout from '@/components/MainLayout.vue'
+import SessionList from '@/views/ChatView/SessionList.vue'
+import ChatArea from '@/views/ChatView/ChatArea.vue'
+import ContactList from '@/views/ContactsView/ContactList.vue'
+import ContactProfile from '@/views/ContactsView/ContactProfile.vue'
+import UserProfile from '@/views/ProfileView/UserProfile.vue'
+import EmptyPlaceholder from '@/components/EmptyPlaceholder.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'Login',
+      component: Login
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/l   ogin',
+      name: 'Login',
+      component: Login
     },
-  ],
+    {
+      path: '/chat',
+      component: MainLayout,
+      children: [
+        {
+          path: '',
+          components: {
+            list: SessionList,
+            default: ChatArea
+          }
+        },
+        {
+          path: 'session',
+          components: {
+            list: SessionList,
+            default: ChatArea
+          }
+        },
+        {
+          path: 'contacts',
+          components: {
+            list: ContactList,
+            default: ContactProfile
+          }
+        },
+        {
+          path: 'profile',
+          components: {
+            list: EmptyPlaceholder,
+            default: UserProfile
+          }
+        }
+      ]
+    }
+  ]
 })
 
 export default router
