@@ -58,6 +58,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+
+import request from '@/utils/request'
 // import { useUserStore } from '@/stores/user'  // 后续引入
 const router = useRouter()
 // const userStore = useUserStore()
@@ -72,95 +74,53 @@ const username = ref('')
 const password = ref('')
 const remember = ref(false)
 
-const login = () => {
-  // 登录逻辑
-  if (username.value && password.value) {
-    // 登录并发送请求
-    const requestBody = {
+const login = async () => {
+  if (!username.value || !password.value) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
+
+  try {
+    const data = await request.post('/login', {
       username: username.value,
       password: password.value
+    })
+
+    // 根据后端实际返回结构判断
+    if (data.success) {
+      localStorage.setItem('token', data.token)
+      ElMessage.success('登录成功！')
+      router.push('/chat')
+    } else {
+      ElMessage.error('登录失败：' + (data.error || '未知错误'))
     }
-    // 登录并发送请求
-    fetch('/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // 本地存储 token
-        localStorage.setItem('token', data.token)
-        // 登录成功，跳转到聊天页
-        router.push('/chat')
-        ElMessage({
-          message: '登录成功!',
-          type: 'success',
-        })
-      } else {
-        console.log(ElMessage)
-        ElMessage({
-          message: '登录失败：' + data.error,
-          type: 'error'
-        })
-      }
-    })
-    .catch(error => {
-      console.error('登录错误:', error)
-      ElMessage({
-        message: '登录过程中发生错误，请检查网络连接',
-        type: 'error'
-      })
-    })
-  } else if (!isLoginMode.value && username.value && password.value) {
-    register()
-  } else {
-    alert('请输入用户名和密码')
+  } catch (error) {
+    console.error('登录错误:', error)
+    ElMessage.error('登录过程中发生错误，请检查网络连接')
   }
 }
-const register = () => {
-  // 注册逻辑
-  if (username.value && password.value) {
-    // 注册并发送请求
-    const requestBody = {
+const register = async () => {
+  if (!username.value || !password.value) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
+
+  try {
+    const data = await request.post('/register', {
       username: username.value,
       password: password.value
+    })
+
+    if (data.success) {
+      localStorage.setItem('token', data.token)
+      ElMessage.success('注册成功！')
+      router.push('/login')
+    } else {
+      ElMessage.error('注册失败：' + (data.error || '未知错误'))
     }
-    // 注册并发送请求
-    fetch('/api/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // 本地存储 token
-        localStorage.setItem('token', data.token)
-        // 注册成功，跳转到登录页
-        router.push('/login')
-        ElMessage({
-          message: '注册成功!',
-          type: 'success',
-        })
-      } else {
-        ElMessage({
-          message: '注册失败：' + data.error,
-          type: 'error',
-        })
-      }
-    })
-    .catch(error => {
-      console.error('注册错误:', error)
-      ElMessage({
-        message: '注册过程中发生错误，请检查网络连接',
-        type: 'error'
-      })
-    })
+  } catch (error) {
+    console.error('注册错误:', error)
+    ElMessage.error('注册过程中发生错误，请检查网络连接')
   }
 }
 
