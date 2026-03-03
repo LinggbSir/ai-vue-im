@@ -73,7 +73,7 @@ CREATE TABLE `sessions` (
   `user_id` INT UNSIGNED NOT NULL COMMENT '用户ID',
   `target_id` INT UNSIGNED NOT NULL COMMENT '对方ID（好友ID或群ID）',
   `type` TINYINT NOT NULL COMMENT '0-私聊 1-群聊',
-  `show` TINYINT NOT NULL DEFAULT 1 COMMENT '1-显示 0-隐藏',
+  `display` TINYINT NOT NULL DEFAULT 1 COMMENT '1-显示 0-隐藏',
   `last_msg_time` TIMESTAMP NULL COMMENT '最后一条消息时间，用于排序',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -97,6 +97,6 @@ CREATE TABLE `messages` (
   KEY `idx_session_id` (`session_id`),
   KEY `idx_sender_id` (`sender_id`),
   KEY `idx_receiver_id_type` (`receiver_id`, `receiver_type`),
-  KEY `idx_created_at` (`created_at`)
+  KEY `idx_created_at` (`created_at`),
   KEY `idx_session_time` (`session_id`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -17,23 +17,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useMessagesStore } from '@/stores/message'
 
 const friendId = ref(123) // 临时
 const inputMsg = ref('')
-const messages = ref([
-  { id: 1, content: '你好', time: '10:00', isSelf: false },
-  { id: 2, content: '在吗？', time: '10:01', isSelf: true },
-])
+const messagesStore = useMessagesStore()
+const currentSessionId = ref(friendId.value) // 假设当前会话 ID 就是好友 ID
+const messages = computed(() => messagesStore.getMessages(currentSessionId.value))
 
 const sendMsg = () => {
   if (!inputMsg.value.trim()) return
-  messages.value.push({
-    id: Date.now(),
-    content: inputMsg.value,
-    time: new Date().toLocaleTimeString().slice(0,5),
-    isSelf: true
-  })
+    messagesStore.addMessage(currentSessionId.value, {
+      id: Date.now(),
+      content: inputMsg.value,
+      time: new Date().toLocaleTimeString().slice(0,5),
+      isSelf: true
+    })
   inputMsg.value = ''
 }
 </script>

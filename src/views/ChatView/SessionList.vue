@@ -3,17 +3,43 @@
     <div class="list-header">
       <h3>会话列表</h3>
     </div>
-    <div class="list-content">
-      <div class="session-item" v-for="i in 5" :key="i">
-        <img src="https://via.placeholder.com/40" alt="avatar" />
-        <div class="info">
-          <div class="name">用户{{ i }}</div>
-          <div class="last-msg">最后一条消息...</div>
+    <router-link
+      v-for="session in sessionList"
+      :key="session.id"
+      :to="`/chat/session/chatArea/${session.target_id}`"
+      custom
+      v-slot="{ navigate, href, isActive }"
+    >
+      <div class="list-content" :class="{ active: isActive }" @click="navigate">
+        <div class="session-item" v-for="session in sessionList" :key="session.id">
+          <img :src="session.avatar" alt="avatar" />
+          <div class="info">
+            <div class="name">{{ session.username }}</div>
+            <div class="last-msg">{{ session.last_msg_time }}</div>
+          </div>
         </div>
       </div>
-    </div>
+    </router-link>
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+
+import request from '@/utils/request'
+
+const sessionList = ref([])
+
+onMounted(async () => {
+  const res = await request.get('/sessions')
+  if (res.success) {
+    sessionList.value = res.sessions || []
+  } else {
+    ElMessage.error(res.error || '获取会话列表失败')
+  }
+})
+
+</script>
 
 <style scoped>
 .session-list {

@@ -65,14 +65,14 @@ module.exports = {
     }
   },
   async acceptFriendRequest(ctx) {
-    const { requestId } = ctx.request.body;
-    const currentUserId = ctx.state.user.id; // 从 JWT 获取当前用户ID
+    const { friendId } = ctx.request.body;
+    const userId = ctx.state.user.id; // 从 JWT 获取当前用户ID
     try {
-      await acceptFriendRequest(currentUserId, requestId);
+      await acceptFriendRequest(userId, friendId);
       ctx.body = { success: true, message: '好友申请已同意' };
       await createFriendship({
-        user_id: currentUserId,
-        friend_id: requestId,
+        user_id: userId,
+        friend_id: friendId,
         status: 1
       });
       //同意好友申请后，创建会话
@@ -87,10 +87,10 @@ module.exports = {
     }
   },
   async rejectFriendRequest(ctx) {
-    const { requestId } = ctx.request.body;
-    const currentUserId = ctx.state.user.id; // 从 JWT 获取当前用户ID
+    const { friendId } = ctx.request.body;
+    const userId = ctx.state.user.id; // 从 JWT 获取当前用户ID
     try {
-      await rejectFriendRequest(currentUserId, requestId);
+      await rejectFriendRequest(userId, friendId);
       ctx.body = { success: true, message: '好友申请已拒绝' };
     } catch (err) {
       console.error('拒绝好友申请失败:', err);

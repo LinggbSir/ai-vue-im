@@ -113,8 +113,8 @@
           />
           <span class="username">{{ req.username }}</span>
           <div class="actions">
-            <button class="accept-btn" @click="acceptRequest(req.id)">同意</button>
-            <button class="reject-btn" @click="rejectRequest(req.id)">拒绝</button>
+            <button class="accept-btn" @click="acceptRequest(req.friend_id)">同意</button>
+            <button class="reject-btn" @click="rejectRequest(req.friend_id)">拒绝</button>
           </div>
         </div>
         <div v-if="requestList.length === 0" class="empty-tip">
@@ -239,8 +239,8 @@ const fetchRequests = async () => {
 }
 
 // 同意申请
-const acceptRequest = async (requestId) => {
-  const res = await request.post('/users/friends/accept', { requestId })
+const acceptRequest = async (friendId) => {
+  const res = await request.post('/users/friends/accept', { friendId })
   console.log(res) 
   if (res.success) {
     ElMessage.success('好友申请已同意')
@@ -251,8 +251,8 @@ const acceptRequest = async (requestId) => {
 }
 
 // 拒绝申请
-const rejectRequest = async (requestId) => {
-  const res = await request.post('/users/friends/reject', { requestId })
+const rejectRequest = async (friendId) => {
+  const res = await request.post('/users/friends/reject', { friendId })
   console.log(res)
   if (res.success) {
     ElMessage.success('好友申请已拒绝')
