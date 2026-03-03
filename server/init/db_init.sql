@@ -98,4 +98,5 @@ CREATE TABLE `messages` (
   KEY `idx_sender_id` (`sender_id`),
   KEY `idx_receiver_id_type` (`receiver_id`, `receiver_type`),
   KEY `idx_created_at` (`created_at`)
+  KEY `idx_session_time` (`session_id`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
