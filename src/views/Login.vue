@@ -57,16 +57,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 // import { useUserStore } from '@/stores/user'  // 后续引入
-
 const router = useRouter()
 // const userStore = useUserStore()
 
 const isLoginMode = ref(true)
 const loading = ref(false)
-const toRegister = () => {
-  isLoginMode.value = false
-} 
 const toggleLoginMode = () => {
   isLoginMode.value = !isLoginMode.value
 }
@@ -98,16 +95,25 @@ const login = () => {
         localStorage.setItem('token', data.token)
         // 登录成功，跳转到聊天页
         router.push('/chat')
+        ElMessage({
+          message: '登录成功!',
+          type: 'success',
+        })
       } else {
-        alert('登录失败：' + data.message)
+        console.log(ElMessage)
+        ElMessage({
+          message: '登录失败：' + data.error,
+          type: 'error'
+        })
       }
     })
     .catch(error => {
       console.error('登录错误:', error)
-      alert('登录过程中发生错误')
+      ElMessage({
+        message: '登录过程中发生错误，请检查网络连接',
+        type: 'error'
+      })
     })
-
-    router.push('/chat')
   } else if (!isLoginMode.value && username.value && password.value) {
     register()
   } else {
@@ -137,13 +143,23 @@ const register = () => {
         localStorage.setItem('token', data.token)
         // 注册成功，跳转到登录页
         router.push('/login')
+        ElMessage({
+          message: '注册成功!',
+          type: 'success',
+        })
       } else {
-        alert('注册失败：' + data.message)
+        ElMessage({
+          message: '注册失败：' + data.error,
+          type: 'error',
+        })
       }
     })
     .catch(error => {
       console.error('注册错误:', error)
-      alert('注册过程中发生错误')
+      ElMessage({
+        message: '注册过程中发生错误，请检查网络连接',
+        type: 'error'
+      })
     })
   }
 }

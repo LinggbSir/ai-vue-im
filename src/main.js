@@ -4,6 +4,7 @@ import router from './router'
 import pinia from './stores'
 import axios from 'axios'
 import { socket } from './utils/socket'
+import 'element-plus/dist/index.css'
 
 const app = createApp(App)
 

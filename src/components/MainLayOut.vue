@@ -39,7 +39,7 @@ provide('settingsDialog', {
   overflow: hidden;
 }
 .list-area {
-  width: 280px;
+  width: 330px;  /* 原来280px，适当加宽 */
   border-right: 1px solid #e5e5e5;
   background-color: #f8f9fa;
   overflow-y: auto;

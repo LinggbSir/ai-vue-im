@@ -1,7 +1,6 @@
 const Koa = require('koa')
 const cors = require('@koa/cors')
 const bodyParser = require('koa-bodyparser')
-const jwt = require('jsonwebtoken')
 const http = require('http')
 const { Server } = require('socket.io')
 require('dotenv').config()
