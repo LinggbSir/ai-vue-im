@@ -1,12 +1,36 @@
 <template>
   <div class="contact-list">
-    <!-- 顶部搜索栏 -->
+    <!-- 顶部区域 -->
     <div class="header">
-      <div class="search-wrapper">
+      <!-- 模式切换按钮组 -->
+      <div class="mode-switch">
+        <button
+          :class="['mode-btn', { active: mode === 'friend' }]"
+          @click="switchMode('friend')"
+        >
+          好友
+        </button>
+        <button
+          :class="['mode-btn', { active: mode === 'stranger' }]"
+          @click="switchMode('stranger')"
+        >
+          陌生人
+        </button>
+        <button
+          :class="['mode-btn', { active: mode === 'request' }]"
+          @click="switchMode('request')"
+        >
+          申请
+          <span v-if="requestCount > 0" class="badge">{{ requestCount }}</span>
+        </button>
+      </div>
+
+      <!-- 搜索栏（仅在好友/陌生人模式显示） -->
+      <div v-if="mode !== 'request'" class="search-wrapper">
         <input
           type="text"
           v-model="searchText"
-          placeholder="搜索..."
+          :placeholder="mode === 'friend' ? '搜索好友...' : '搜索陌生人...'"
           @focus="handleFocus"
           @blur="handleBlur"
           class="search-input"
@@ -21,16 +45,10 @@
           🔍
         </button>
       </div>
-      <!-- 模式切换按钮 -->
+
+      <!-- 陌生人模式下的“取消”按钮（切换回好友模式） -->
       <button
-        v-if="mode === 'friend'"
-        class="mode-btn primary"
-        @click="switchToStrangerMode"
-      >
-        添加好友
-      </button>
-      <button
-        v-else
+        v-if="mode === 'stranger'"
         class="mode-btn"
         @click="switchToFriendMode"
       >
@@ -47,25 +65,56 @@
           :key="friend.id"
           class="contact-item"
         >
-          <span>{{ friend.name }}</span>
+          <img
+            :src="friend.avatar || 'https://via.placeholder.com/40'"
+            class="avatar"
+          />
+          <span class="username">{{ friend.username }}</span>
+          <!-- 好友模式暂无操作按钮，可留空或添加“聊天”按钮 -->
         </div>
         <div v-if="filteredFriends.length === 0" class="empty-tip">
-          {{ searchText && !isFocus ? '无匹配好友' : '暂无好友' }}
+          {{ searchText && isFocus ? '无匹配好友' : '暂无好友' }}
         </div>
       </template>
 
       <!-- 陌生人模式 -->
-      <template v-else>
+      <template v-else-if="mode === 'stranger'">
         <div
           v-for="stranger in strangerList"
           :key="stranger.id"
           class="contact-item"
         >
-          <span>{{ stranger.name }}</span>
+          <img
+            :src="stranger.avatar || 'https://via.placeholder.com/40'"
+            class="avatar"
+          />
+          <span class="username">{{ stranger.username }}</span>
           <button class="add-btn" @click="addFriend(stranger.id)">添加</button>
         </div>
         <div v-if="strangerList.length === 0" class="empty-tip">
           {{ searching ? '搜索中...' : '输入关键词并点击搜索' }}
+        </div>
+      </template>
+
+      <!-- 申请模式 -->
+      <template v-else-if="mode === 'request'">
+        <div
+          v-for="req in requestList"
+          :key="req.id"
+          class="contact-item"
+        >
+          <img
+            :src="req.avatar || 'https://via.placeholder.com/40'"
+            class="avatar"
+          />
+          <span class="username">{{ req.username }}</span>
+          <div class="actions">
+            <button class="accept-btn" @click="acceptRequest(req.id)">同意</button>
+            <button class="reject-btn" @click="rejectRequest(req.id)">拒绝</button>
+          </div>
+        </div>
+        <div v-if="requestList.length === 0" class="empty-tip">
+          暂无好友申请
         </div>
       </template>
     </div>
@@ -73,32 +122,32 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-
-// ---------- 模拟数据 ----------
-const mockFriends = [
-  { id: 1, name: '张三' },
-  { id: 2, name: '李四' },
-  { id: 3, name: '王五' },
-  { id: 4, name: '赵六' },
-  { id: 5, name: '田七' },
-]
+import { ref, computed, onMounted } from 'vue'
+import request from '@/utils/request'
 
 // ---------- 状态 ----------
-const mode = ref('friend')           // 'friend' 或 'stranger'
+const mode = ref('friend')                // 'friend', 'stranger', 'request'
 const searchText = ref('')
-const isFocus = ref(false)           // 输入框是否聚焦
-const searching = ref(false)         // 陌生人搜索中
-const strangerList = ref([])         // 陌生人搜索结果
+const isFocus = ref(false)                // 输入框是否聚焦
+const searching = ref(false)              // 陌生人搜索中
+const strangerList = ref([])              // 陌生人搜索结果
+const requestList = ref([])               // 好友申请列表
+const friendList = ref([])                // 好友列表
+const requestCount = computed(() => requestList.value.length)
 
 // 过滤后的好友列表
 const filteredFriends = computed(() => {
-  // 聚焦且搜索词为空 → 空列表
-  if (isFocus.value && !searchText.value) return []
-  // 无搜索词 → 显示全部好友
-  if (!searchText.value) return mockFriends
-  // 有搜索词 → 按名称过滤
-  return mockFriends.filter(f => f.name.includes(searchText.value))
+  // if (!searchText.value) {
+  //   // 聚焦时显示空，否则显示全部好友
+  //   return isFocus.value ? [] : friendList.value
+  // }
+  // return friendList.value.filter(f => f.name.includes(searchText.value))
+  console.log(friendList.value.length)
+  return friendList.value
+})
+
+onMounted(() => {
+  fetchFriends()
 })
 
 // ---------- 方法 ----------
@@ -108,6 +157,16 @@ const handleFocus = () => {
 
 const handleBlur = () => {
   isFocus.value = false
+}
+
+const switchMode = (newMode) => {
+  mode.value = newMode
+  searchText.value = ''
+  if (newMode === 'request') {
+    fetchRequests()
+  } else if (newMode === 'stranger') {
+    strangerList.value = []
+  }
 }
 
 const switchToStrangerMode = () => {
@@ -122,34 +181,81 @@ const switchToFriendMode = () => {
   strangerList.value = []
 }
 
-// ContactList.vue
+// 搜索陌生人
 const handleSearchStranger = async () => {
-  if (!searchText.value || searching.value) return;
-  searching.value = true;
+  if (!searchText.value || searching.value) return
+  searching.value = true
   try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`/api/users/search?keyword=${encodeURIComponent(searchText.value)}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    const data = await res.json();
-    if (res.ok) {
-      strangerList.value = data.users || [];
+    const data = await request.get('/users/search', { params: { keyword: searchText.value } })
+    if (data.users) {
+      strangerList.value = data.users
     } else {
-      console.error('搜索失败', data.error);
-      // 可以添加错误提示，例如 alert 或弹窗
+      // 处理业务错误（例如用户名不存在等）
+      console.error('搜索失败', data.error || '未知错误')
+      // 可给用户提示
     }
   } catch (error) {
-    console.error('网络错误', error);
+    // 网络错误或服务器返回 5xx 等异常
+    console.error('网络错误或服务器异常', error)
+    // 可给用户提示
   } finally {
-    searching.value = false;
+    searching.value = false
   }
-};
+}
 
-const addFriend = (userId) => {
-  alert(`添加好友请求已发送，用户ID：${userId}`)
-  // 实际应调用添加好友接口，成功后切换回好友模式并刷新列表
+// 添加好友请求
+const addFriend = async (userId) => {
+  const res = await request.post('/users/friends/add', { friendId: userId })
+  if (res.success) {
+    ElMessage.success('好友申请发送成功')
+    // 刷新好友列表（需全局状态管理）
+  } else {
+    ElMessage.error(res.error || '好友申请发送失败')
+  }
+}
+
+// 获取好友列表
+const fetchFriends = async () => {
+  const res = await request.get('/users/friends')
+  if (res.success) {
+    friendList.value = res.friendList
+  } else {
+    ElMessage.error(res.error || '获取好友列表失败')
+  }
+}
+
+// 获取好友申请列表
+const fetchRequests = async () => {
+  const res = await request.get('/users/friends/requests')
+  if (res.success) {
+    requestList.value = res.friendRequests || []
+  } else {
+    ElMessage.error(res.error || '获取好友申请列表失败')
+  }
+}
+
+// 同意申请
+const acceptRequest = async (requestId) => {
+  const res = await request.post('/users/friends/accept', { requestId })
+  console.log(res) 
+  if (res.success) {
+    ElMessage.success('好友申请已同意')
+    // 刷新好友列表（需全局状态管理）
+  } else {
+    ElMessage.error(res.error || '好友申请同意失败')
+  }
+}
+
+// 拒绝申请
+const rejectRequest = async (requestId) => {
+  const res = await request.post('/users/friends/reject', { requestId })
+  console.log(res)
+  if (res.success) {
+    ElMessage.success('好友申请已拒绝')
+    // 刷新好友列表（需全局状态管理）
+  } else {
+    ElMessage.error(res.error || '好友申请拒绝失败')
+  }
 }
 </script>
 
@@ -168,12 +274,47 @@ const addFriend = (userId) => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap; /* 防止空间不足换行 */
+}
+
+.mode-switch {
+  display: flex;
+  gap: 4px;
+}
+
+.mode-btn {
+  padding: 6px 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  position: relative;
+}
+
+.mode-btn.active {
+  background-color: #07c160;
+  color: white;
+  border-color: #07c160;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 10px;
 }
 
 .search-wrapper {
   flex: 1;
   display: flex;
   gap: 4px;
+  min-width: 150px;
 }
 
 .search-input {
@@ -205,22 +346,6 @@ const addFriend = (userId) => {
   cursor: not-allowed;
 }
 
-.mode-btn {
-  padding: 8px 12px;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.mode-btn.primary {
-  background-color: #07c160;
-  color: white;
-  border: none;
-}
-
 .list {
   flex: 1;
   overflow-y: auto;
@@ -229,7 +354,6 @@ const addFriend = (userId) => {
 
 .contact-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
   border-bottom: 1px solid #f5f5f5;
@@ -240,9 +364,49 @@ const addFriend = (userId) => {
   background-color: #f9f9f9;
 }
 
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.username {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
 .add-btn {
   padding: 4px 10px;
   background-color: #07c160;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn {
+  padding: 4px 8px;
+  background-color: #07c160;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.reject-btn {
+  padding: 4px 8px;
+  background-color: #f44336;
   color: white;
   border: none;
   border-radius: 4px;

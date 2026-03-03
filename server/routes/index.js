@@ -10,6 +10,11 @@ router.post('/login', AuthController.login)
 
 // 用户相关路由
 router.get('/users/search', authMiddleware, UserController.searchUsers)
+router.post('/users/friends/add', authMiddleware, UserController.addFriend)
+router.get('/users/friends', authMiddleware, UserController.getFriendList)
+router.get('/users/friends/requests', authMiddleware, UserController.getFriendRequests)
+router.post('/users/friends/accept', authMiddleware, UserController.acceptFriendRequest)
+router.post('/users/friends/reject', authMiddleware, UserController.rejectFriendRequest)
 
 module.exports = router
 
