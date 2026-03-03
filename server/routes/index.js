@@ -15,6 +15,7 @@ router.get('/users/friends', authMiddleware, UserController.getFriendList)
 router.get('/users/friends/requests', authMiddleware, UserController.getFriendRequests)
 router.post('/users/friends/accept', authMiddleware, UserController.acceptFriendRequest)
 router.post('/users/friends/reject', authMiddleware, UserController.rejectFriendRequest)
+router.get('/users/:id', authMiddleware, UserController.getUserById)
 
 module.exports = router
 

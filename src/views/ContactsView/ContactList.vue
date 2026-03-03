@@ -60,18 +60,22 @@
     <div class="list">
       <!-- 好友模式 -->
       <template v-if="mode === 'friend'">
-        <div
+        <router-link
           v-for="friend in filteredFriends"
           :key="friend.id"
-          class="contact-item"
+          :to="`/chat/contacts/profile/${friend.id}`"
+          custom
+          v-slot="{ navigate, href, isActive }"
         >
-          <img
-            :src="friend.avatar || 'https://via.placeholder.com/40'"
-            class="avatar"
-          />
-          <span class="username">{{ friend.username }}</span>
-          <!-- 好友模式暂无操作按钮，可留空或添加“聊天”按钮 -->
-        </div>
+          <div
+            class="contact-item"
+            :class="{ active: isActive }"
+            @click="navigate"
+          >
+            <img :src="friend.avatar || 'https://via.placeholder.com/40'" class="avatar" />
+            <span class="username">{{ friend.name }}</span>
+          </div>
+        </router-link>
         <div v-if="filteredFriends.length === 0" class="empty-tip">
           {{ searchText && isFocus ? '无匹配好友' : '暂无好友' }}
         </div>
@@ -419,5 +423,10 @@ const rejectRequest = async (requestId) => {
   color: #999;
   padding: 20px;
   font-size: 14px;
+}
+
+.contact-item.active {
+  background-color: #e6f7ff;
+  border-left: 3px solid #07c160;
 }
 </style>

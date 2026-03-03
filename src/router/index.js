@@ -36,6 +36,13 @@ const router = createRouter({
           components: {
             list: SessionList,
             default: ChatArea
+          },
+          children: {
+            path: ':friendId',
+            components: {
+              list: SessionList,
+              default: ChatArea
+            }
           }
         },
         {
@@ -43,7 +50,16 @@ const router = createRouter({
           components: {
             list: ContactList,
             default: ContactProfile
-          }
+          },
+          children: [
+            {
+              path: 'profile/:id',
+              components: {
+                list: ContactList,
+                default: ContactProfile
+              }
+            }
+          ]
         },
         {
           path: 'profile',

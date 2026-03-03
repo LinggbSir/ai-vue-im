@@ -30,11 +30,10 @@ async function addFriend(currentUserId, friendId) {
   // 检查是否已存在好友关系
   const checkSql = `
     SELECT 1 FROM friends
-    WHERE (user_id = ? AND friend_id = ?)
-       OR (user_id = ? AND friend_id = ?)
+    WHERE user_id = ? AND friend_id = ?
   `;
   const [rows] = await pool.query(checkSql, [
-    currentUserId, friendId, friendId, currentUserId
+    currentUserId, friendId
   ]);
   if (rows.length > 0) throw new Error('好友关系已存在');
   // 插入好友关系
@@ -50,9 +49,8 @@ async function getFriendList(currentUserId) {
   const sql = `
     SELECT u.id, u.username, u.avatar, u.signature
     FROM friends f
-    JOIN users u ON (f.user_id = u.id AND f.friend_id = ?)
-      OR (f.user_id = ? AND f.friend_id = u.id)
-    WHERE f.status = 1
+    JOIN users u ON f.friend_id = u.id
+    WHERE f.user_id = ? AND f.status = 1
   `;
   const [rows] = await pool.query(sql, [currentUserId, currentUserId]);
   return rows;
@@ -99,4 +97,37 @@ async function rejectFriendRequest(currentUserId, friendId) {
   `;
   await pool.query(deleteSql, [friendId, currentUserId]);
 }
-module.exports = { searchUsers, addFriend, getFriendList, getFriendRequests, acceptFriendRequest, rejectFriendRequest };
+async function findUserById(id) {
+  const [rows] = await pool.query(
+    'SELECT id, username, avatar, signature, email FROM users WHERE id = ?',
+    [id]
+  )
+  return rows[0]
+}
+
+async function checkFriendship(user_id, friend_id) {
+  const [rows] = await pool.query(
+    'SELECT 1 FROM friends WHERE user_id = ? AND friend_id = ? AND status = 1',
+    [user_id, friend_id]
+  )
+  return rows.length > 0
+}
+async function createFriendship(friendship) {
+  const { user_id, friend_id, status } = friendship;
+  await pool.query(
+    'INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE status = ?',
+    [user_id, friend_id, status, status]
+  );
+}
+
+module.exports = { 
+  searchUsers,
+   addFriend, 
+   getFriendList, 
+   getFriendRequests, 
+   acceptFriendRequest, 
+   rejectFriendRequest, 
+   findUserById,
+   checkFriendship,
+   createFriendship
+  };
