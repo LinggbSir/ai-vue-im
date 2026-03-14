@@ -131,9 +131,7 @@ import { storeToRefs } from 'pinia'
 import request from '@/utils/request'
 import { useContactStore } from '@/stores/index'
 const contactStore = useContactStore()
-onMounted(() => {
-  contactStore.getContacts()
-})
+
 const { contactList, loading } = storeToRefs(contactStore)
 
 

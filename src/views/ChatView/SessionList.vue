@@ -43,23 +43,18 @@ import dayjs from 'dayjs'
 
 const router = useRouter()
 const route = useRoute()
-import { authStore, useSessionStore } from '@/stores/index'
-const userStore = authStore()
+import { useAuthStore, useSessionStore } from '@/stores/index'
+const authStore = useAuthStore()
 const sessionStore = useSessionStore()
 
 const { sessionList, loading } = storeToRefs(sessionStore)
-onMounted(async () => {
-  console.log('123')
-  await sessionStore.getSessions()
-  console.log('sessionList:', sessionList.value)
-})
 
 const selectedSessionId = ref('')
 const targetSessionId = computed(() => {
-  const myId = userStore.myId
+  const userId = authStore.userId
   const targetId = route.params.targetId
   if (!targetId) return null
-  return [myId, targetId].sort().join('_')
+  return [userId, targetId].sort().join('_')
 })
 watch(targetSessionId, (newSessionId) => {
   selectedSessionId.value = newSessionId

@@ -1,10 +1,10 @@
 // src/utils/socket.js
 import io from 'socket.io-client'
-import { authStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 
 let socket = null
 export const initSocket = () => {
-  const userStore = authStore();
+  const userStore = useAuthStore();
   const token = userStore.token || localStorage.getItem('token');
   if (!token) return null;
 

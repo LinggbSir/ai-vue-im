@@ -4,7 +4,19 @@
 
 <script setup>
 // 全局初始化逻辑可以放在这里（如检查登录状态、加载用户信息等）
-// 但现在可以留空，后续根据需要添加
+import { initAllStores } from '@/stores/index'
+import { useAuthStore } from '@/stores/auth'
+import { onMounted } from 'vue'
+
+let token = localStorage.getItem('token')
+if (token) {
+  useAuthStore().token = token
+}
+onMounted(async () => {
+  if (localStorage.getItem('token')) {
+    await initAllStores()
+  }
+})
 </script>
 
 <style>

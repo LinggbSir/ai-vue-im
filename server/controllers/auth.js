@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs') // 需要安装: npm install bcryptjs
-const { findUserByUsername, findUserById, createUser } = require('../models')
+const { findUserByUsername, createUser } = require('../models')
 
 module.exports = {
   async register(ctx) {

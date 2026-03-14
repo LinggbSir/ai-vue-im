@@ -61,10 +61,10 @@ import { ElMessage } from 'element-plus'
 
 import request from '@/utils/request'
 import { initSocket } from '@/utils/socket'
-import { authStore } from '@/stores/auth'
+import { useAuthStore, initAllStores } from '@/stores'
 
 const router = useRouter()
-const userStore = authStore()
+const authStore = useAuthStore()
 
 const isLoginMode = ref(true)
 const loading = ref(false)
@@ -94,7 +94,9 @@ const login = async () => {
       ElMessage.success('登录成功！')
       // 初始化 socket 连接
       initSocket()
-      userStore.logIn(data.user)
+      authStore.logIn(data.user)
+      // 初始化所有 store
+      await initAllStores()
       router.push('/chat')
     } else {
       ElMessage.error('登录失败：' + (data.error || '未知错误'))

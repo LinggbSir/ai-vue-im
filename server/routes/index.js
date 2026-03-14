@@ -3,6 +3,7 @@ const AuthController = require('../controllers/auth')
 const UserController = require('../controllers/user')
 const authMiddleware = require('../middlewares/auth'); // 引入中间件
 const SessionController = require('../controllers/session'); // 引入会话控制器
+const MessageController = require('../controllers/message'); // 引入消息控制器
 const router = new Router()
 
 // 认证相关路由
@@ -20,6 +21,11 @@ router.get('/users/:id', authMiddleware, UserController.getUserById)
 
 // 会话相关路由
 router.get('/sessions', authMiddleware, SessionController.getSessionList)
+
+// 消息相关路由
+router.get('/messages', authMiddleware, MessageController.getMessages)
+
+
 
 module.exports = router
 
