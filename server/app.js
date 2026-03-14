@@ -1,9 +1,12 @@
+require('dotenv').config()
+
 const Koa = require('koa')
 const cors = require('@koa/cors')
 const bodyParser = require('koa-bodyparser')
 const http = require('http')
 const { Server } = require('socket.io')
-require('dotenv').config()
+const initSocket = require('./sockets')
+
 
 const router = require('./routes')
 router.prefix('/api')
@@ -21,6 +24,9 @@ const io = new Server(server, {
 app.use(cors())
 app.use(bodyParser())
 app.use(router.routes()).use(router.allowedMethods())
+
+// 初始化 WebSocket 服务器
+const { userSockets } = initSocket(io)
 
 // 启动 HTTP 服务器
 server.listen(process.env.PORT || 3000, () => {

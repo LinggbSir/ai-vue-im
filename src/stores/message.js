@@ -6,7 +6,9 @@ export const useMessageStore = defineStore('message', () => {
   const messagesBySession = ref({})
 
   // 获取某个会话的消息
-  const getMessages = (sessionId) => messagesBySession.value[sessionId] || []
+  const getMessages = (sessionId) => {
+    return messagesBySession.value[sessionId] || []
+  }
 
   // 设置某个会话的消息（首次加载历史）
   const setMessages = (sessionId, messages) => {
@@ -19,6 +21,7 @@ export const useMessageStore = defineStore('message', () => {
       messagesBySession.value[sessionId] = []
     }
     messagesBySession.value[sessionId].push(message)
+    console.log('addMessage:', messagesBySession.value[sessionId])
   }
 
   // 清空会话消息（如退出群聊）

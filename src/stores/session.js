@@ -13,6 +13,7 @@ export const useSessionStore = defineStore('session', () => {
     if (res.success) {
       // 假设后端已经返回了每个会话的 target_name 和 avatar
       sessionList.value = res.sessions || []
+      console.log(' store sessionList:', sessionList.value)
     } else {
       throw new Error(res.error || '获取会话列表失败')
       ElMessage.error(res.error || '获取会话列表失败')

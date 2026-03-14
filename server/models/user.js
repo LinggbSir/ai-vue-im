@@ -121,7 +121,7 @@ async function createFriendship(friendship) {
 }
 
 module.exports = { 
-  searchUsers,
+   searchUsers,
    addFriend, 
    getFriendList, 
    getFriendRequests, 

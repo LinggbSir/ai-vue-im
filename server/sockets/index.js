@@ -1,5 +1,5 @@
-const messageModel = require('../models/message'); // 假设有消息模型
-const friendModel = require('../models/friend');   // 用于检查好友关系（可选）
+const messageModel = require('../models/message'); 
+const jwt = require('jsonwebtoken');
 
 module.exports = (io) => {
   // 存储在线用户 socketId 与 userId 的映射（已在之前的代码中）
@@ -23,21 +23,18 @@ module.exports = (io) => {
     socket.on('private message', async (data) => {
       const { to, content } = data; // to: 接收方用户ID, content: 消息内容
       const from = socket.userId;
-
+      console.log('发送私聊消息:', { from, to, content });
       if (!to || !content) return;
 
       try {
-        // 可选：检查是否是好友（根据你的业务决定）
-        // const isFriend = await friendModel.checkFriendship(from, to);
-        // if (!isFriend) return socket.emit('error', '不是好友，不能发送消息');
-
         // 生成会话ID（例如用两个ID排序后拼接）
         const sessionId = [from, to].sort().join('_'); // 例如 "123_456"
 
         // 保存消息到数据库
-        const messageId = await messageModel.createMessage({
+        const messageId = await messageModel.saveMessage({
           session_id: sessionId,
           sender_id: from,
+          receiver_type: 0, // 0 表示用户
           receiver_id: to,
           content,
           type: 0, // 文本消息
@@ -76,4 +73,5 @@ module.exports = (io) => {
       userSockets.delete(socket.userId);
     });
   });
+  return { userSockets };
 };

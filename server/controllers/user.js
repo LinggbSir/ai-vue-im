@@ -42,11 +42,11 @@ module.exports = {
       ctx.body = { success: false, error: '服务器错误' };
     }
   },
-  async getFriendList(ctx) {
+  async getContactList(ctx) {
     const currentUserId = ctx.state.user.id; // 从 JWT 获取当前用户ID
     try {
-      const friendList = await getFriendList(currentUserId);
-      ctx.body = { success: true, friendList };
+      const contactList = await getFriendList(currentUserId);
+      ctx.body = { success: true, contactList };
     } catch (err) {
       console.error('获取好友列表失败:', err);
       ctx.status = 500;

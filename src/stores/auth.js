@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-export const useUserStore = defineStore('user', () => {
+export const authStore = defineStore('user', () => {
   const myId = ref('')
   const userName = ref('')
   const userAvatar = ref('')

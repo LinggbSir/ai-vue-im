@@ -1,12 +1,12 @@
 <template>
   <div class="chat-area">
     <div class="chat-header">
-      <h3>与用户{{ friendId }}聊天中</h3>
+      <h3>与用户{{ currentTargetId }}聊天中</h3>
     </div>
     <div class="message-list" ref="messageList">
-      <div v-for="msg in messages" :key="msg.id" class="message" :class="{ 'self': msg.isSelf }">
+      <div v-for="msg in messages" :key="msg.id" class="message" :class="{ 'self': msg.from === userStore.myId }">
         <div class="bubble">{{ msg.content }}</div>
-        <div class="time">{{ msg.time }}</div>
+        <div class="time">{{ formatTime(msg.createdAt) }}</div>
       </div>
     </div>
     <div class="chat-footer">
@@ -17,30 +17,63 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useMessageStore } from '@/stores/index'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { authStore, useMessageStore } from '@/stores/index'
 import { useRoute  } from 'vue-router'
+import dayjs from 'dayjs'
+import { getSocket } from '@/utils/socket'
+
+const formatTime = (timestamp) => {
+  return dayjs(timestamp).format('HH:mm') // 仅显示时分
+}
 
 const route = useRoute()
 const inputMsg = ref('')
 const messagesStore = useMessageStore()
-const currentTargetId = ref(null) // 假设当前会话 ID 就是好友 ID
-const messages = computed(() => messagesStore.getMessages(currentTargetId.value))
+const userStore = authStore() 
+const currentTargetId = ref(null)
+const sessionId = computed(() => {
+  if (!currentTargetId.value) return null
+  return [userStore.myId, currentTargetId.value].sort().join('_')
+})
+// const messages = computed(() => messagesStore.getMessages(currentTargetId.value))
+const messages = computed(() => {
+  console.log('重新计算')
+  if (!sessionId.value) return []
+  return messagesStore.messagesBySession[sessionId.value] || []
+})
+watch(messages, (newMessages) => {
+  console.log('newMessages:', newMessages)
+})
 
 watch(() => route.params.targetId, (newTargetId) => {
+  console.log('newTargetId:', newTargetId)
   currentTargetId.value = newTargetId
 })
 
 const sendMsg = () => {
-  if (!inputMsg.value.trim()) return
-    messagesStore.addMessage(currentTargetId.value, {
-      id: Date.now(),
-      content: inputMsg.value,
-      time: new Date().toLocaleTimeString().slice(0,5),
-      isSelf: true                                                                                                   
-    })
+  if (!inputMsg.value.trim()) returnx``
+  socket.emit('private message', {
+    to: parseInt(currentTargetId.value),
+    content: inputMsg.value,
+  });
   inputMsg.value = ''
 }
+
+const socket = getSocket()
+const handleNewMsg = (msg) => {
+  console.log('msg:', msg)
+  messagesStore.addMessage(sessionId.value, msg)
+}
+onMounted(() => {
+  socket?.on('private message', handleNewMsg);
+  console.log('myId:', userStore.myId)
+});
+
+onUnmounted(() => {
+  socket?.off('private message', handleNewMsg);
+});
+
 </script>
 
 <style scoped>

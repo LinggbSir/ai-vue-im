@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-const getLastMessage = async (sessionId) => {
+async function getLastMessage(sessionId) {
   const sql = `
     SELECT content, created_at
     FROM messages
@@ -10,4 +10,18 @@ const getLastMessage = async (sessionId) => {
   `;
   const [rows] = await pool.query(sql, [sessionId]);
   return rows[0];
+}
+
+async function saveMessage({ session_id, sender_id, receiver_type, receiver_id, content, type = 0 }) {
+  const [result] = await pool.query(
+    `INSERT INTO messages (session_id, sender_id, receiver_type, receiver_id, content, type, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, NOW())`,
+    [session_id, sender_id, receiver_type, receiver_id, content, type]
+  );
+  return result.insertId;
+}
+
+module.exports = {
+  getLastMessage,
+  saveMessage
 }

@@ -1,30 +1,9 @@
 <template>
   <div class="session-list">
-    <div class="list-header">
-      <h3>会话列表</h3>
-    </div>
-    <router-link
-      v-for="session in sessionList"
-      :key="session.id"
-      :to="`/chat/session/chatArea/${session.target_id}`"
-      custom
-      v-slot="{ navigate, href, isActive }"
-    >
-      <div class="list-content" :class="{ active: isActive }" @click="navigate">
-        <div class="session-item" v-for="session in sessionList" :key="session.id" @click="selectSession(session)">
-          <img :src="session.avatar" alt="avatar" />
-          <div class="info">
-            <div class="name">{{ session.target_name }}</div>
-            <div class="last-msg">{{ session.last_msg_time }}</div>
-          </div>
-        </div>
-      </div>
-    </router-link>
-  </div>
-  <div class="session-list">
-    <div v-if="loading">加载中...</div>
-    <div v-else-if="sessionList.length === 0">暂无会话</div>
-    <div v-else>
+    <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="sessionList.length === 0" class="empty">暂无会话</div>
+    <div v-else class="list-content">
+      <!-- 使用 router-link 包裹每个会话项，实现导航和高亮 -->
       <router-link
         v-for="session in sessionList"
         :key="session.id"
@@ -32,12 +11,21 @@
         custom
         v-slot="{ navigate, href, isActive }"
       >
-        <div class="list-content" :class="{ active: isActive }" @click="navigate">
-          <div class="session-item" v-for="session in sessionList" :key="session.id" @click="selectSession(session)">
-            <img :src="session.avatar" alt="avatar" />
-            <div class="info">
-              <div class="name">{{ session.target_name }}</div>
-              <div class="last-msg">{{ session.last_msg_time }}</div>
+        <div
+          class="session-item"
+          :class="{ active: isActive }"
+          @click="navigate"
+        >
+          <img :src="session.avatar" alt="avatar" class="avatar" />
+          <div class="info">
+            <div class="info-header">
+              <span class="name">{{ session.target_name }}</span>
+              <span class="time">{{ formatTime(session.last_msg_time) }}</span>
+            </div>
+            <div class="last-msg-wrapper">
+              <span class="last-msg">{{ session.last_msg || '暂无消息' }}</span>
+              <!-- 如果有未读消息，显示绿色角标（可选） -->
+              <span v-if="session.unread" class="unread-badge">{{ session.unread }}</span>
             </div>
           </div>
         </div>
@@ -51,16 +39,19 @@ import { ref, onMounted,computed, watch } from 'vue'
 import request from '@/utils/request'
 import {useRoute, useRouter} from 'vue-router'
 import { storeToRefs } from 'pinia'    
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const route = useRoute()
-import { useUserStore, useSessionStore } from '@/stores/index'
-const userStore = useUserStore()
+import { authStore, useSessionStore } from '@/stores/index'
+const userStore = authStore()
 const sessionStore = useSessionStore()
 
 const { sessionList, loading } = storeToRefs(sessionStore)
 onMounted(async () => {
+  console.log('123')
   await sessionStore.getSessions()
+  console.log('sessionList:', sessionList.value)
 })
 
 const selectedSessionId = ref('')
@@ -80,6 +71,22 @@ const selectSession = (session) => {
   router.push(`/chat/session/${friendId}`)
 }
 
+// 时间格式化函数
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = dayjs(timestamp)
+  const now = dayjs()
+  if (date.isSame(now, 'day')) {
+    return date.format('HH:mm')  // 今天显示 时:分
+  } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
+    return '昨天'
+  } else if (date.isSame(now, 'year')) {
+    return date.format('M/D')  // 今年显示 月/日
+  } else {
+    return date.format('YYYY/M/D')  // 跨年显示 年/月/日
+  }
+}
+
 </script>
 
 <style scoped>
@@ -87,36 +94,128 @@ const selectSession = (session) => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background-color: #f5f5f5;  /* 列表背景变灰 */
 }
-.list-header {
-  padding: 16px;
-  border-bottom: 1px solid #e5e5e5;
-}
+
 .list-content {
   flex: 1;
   overflow-y: auto;
+  backdrop-filter: blur(2px);  /* 轻微毛玻璃效果 */
 }
+
 .session-item {
   display: flex;
   padding: 12px 16px;
   gap: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid transparent;
+  background-color: transparent;
 }
+
 .session-item:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(0, 0, 0, 0.02);
 }
-.session-item img {
+
+/* 选中状态 - 微信绿高亮 */
+.session-item.active {
+  background-color: #e9f7e9;  /* 浅绿色背景 */
+  border-left: 3px solid #07c160;  /* 左侧绿色边框 */
+}
+
+.session-item .avatar {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
 .info {
   flex: 1;
+  min-width: 0;  /* 防止内容溢出 */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
+
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .name {
-  font-weight: 500;
+  font-weight: 600;  /* 加粗 */
+  font-size: 15px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
 }
-.last-msg {
-  font-size: 12px;
+
+.time {
+  font-size: 11px;
   color: #999;
+  flex-shrink: 0;
+}
+
+.last-msg-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.last-msg {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
+}
+
+/* 未读小红点 */
+.unread-badge {
+  background-color: #07c160;
+  color: white;
+  font-size: 10px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .session-list {
+    background-color: #2a2a2a;
+  }
+  
+  .name {
+    color: #e5e5e5;
+  }
+  
+  .last-msg {
+    color: #aaa;
+  }
+  
+  .time {
+    color: #888;
+  }
+  
+  .session-item.active {
+    background-color: #1a3a1a;
+    border-left-color: #07c160;
+  }
 }
 </style>

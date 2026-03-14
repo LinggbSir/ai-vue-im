@@ -60,9 +60,11 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import request from '@/utils/request'
-// import { useUserStore } from '@/stores/user'  // 后续引入
+import { initSocket } from '@/utils/socket'
+import { authStore } from '@/stores/auth'
+
 const router = useRouter()
-// const userStore = useUserStore()
+const userStore = authStore()
 
 const isLoginMode = ref(true)
 const loading = ref(false)
@@ -90,6 +92,9 @@ const login = async () => {
     if (data.success) {
       localStorage.setItem('token', data.token)
       ElMessage.success('登录成功！')
+      // 初始化 socket 连接
+      initSocket()
+      userStore.logIn(data.user)
       router.push('/chat')
     } else {
       ElMessage.error('登录失败：' + (data.error || '未知错误'))

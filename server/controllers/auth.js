@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs') // 需要安装: npm install bcryptjs
-const { findUserByUsername, createUser } = require('../models')
+const { findUserByUsername, findUserById, createUser } = require('../models')
 
 module.exports = {
   async register(ctx) {
@@ -48,7 +48,8 @@ module.exports = {
       }
       // 登录成功，返回 JWT 令牌
       const token = jwt.sign({ id: user.id, username }, process.env.JWT_SECRET, { expiresIn: '7d' })
-      ctx.body = { success: true, status:200, token, user: { id: user.id, username, nickname: user.nickname } }
+
+      ctx.body = { success: true, status:200, token, user }
     } catch (err) {
       console.error('登录错误:', err)
       ctx.status = 500

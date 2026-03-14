@@ -73,7 +73,7 @@
             @click="navigate"
           >
             <img :src="friend.avatar || 'https://via.placeholder.com/40'" class="avatar" />
-            <span class="username">{{ friend.name }}</span>
+            <span class="username">{{ friend.username }}</span>
           </div>
         </router-link>
         <div v-if="filteredFriends.length === 0" class="empty-tip">
@@ -127,7 +127,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import request from '@/utils/request'
+import { useContactStore } from '@/stores/index'
+const contactStore = useContactStore()
+onMounted(() => {
+  contactStore.getContacts()
+})
+const { contactList, loading } = storeToRefs(contactStore)
+
+
 
 // ---------- 状态 ----------
 const mode = ref('friend')                // 'friend', 'stranger', 'request'
@@ -136,23 +145,19 @@ const isFocus = ref(false)                // 输入框是否聚焦
 const searching = ref(false)              // 陌生人搜索中
 const strangerList = ref([])              // 陌生人搜索结果
 const requestList = ref([])               // 好友申请列表
-const friendList = ref([])                // 好友列表
 const requestCount = computed(() => requestList.value.length)
 
 // 过滤后的好友列表
 const filteredFriends = computed(() => {
   // if (!searchText.value) {
   //   // 聚焦时显示空，否则显示全部好友
-  //   return isFocus.value ? [] : friendList.value
+  //   return isFocus.value ? [] : contactList.value
   // }
-  // return friendList.value.filter(f => f.name.includes(searchText.value))
-  console.log(friendList.value.length)
-  return friendList.value
+  // return contactList.value.filter(f => f.name.includes(searchText.value))
+  console.log(contactList.value.length)
+  return contactList.value
 })
 
-onMounted(() => {
-  fetchFriends()
-})
 
 // ---------- 方法 ----------
 const handleFocus = () => {
@@ -209,7 +214,7 @@ const handleSearchStranger = async () => {
 
 // 添加好友请求
 const addFriend = async (userId) => {
-  const res = await request.post('/users/friends/add', { friendId: userId })
+  const res = await request.post('/users/contacts/add', { friendId: userId })
   if (res.success) {
     ElMessage.success('好友申请发送成功')
     // 刷新好友列表（需全局状态管理）
@@ -218,19 +223,9 @@ const addFriend = async (userId) => {
   }
 }
 
-// 获取好友列表
-const fetchFriends = async () => {
-  const res = await request.get('/users/friends')
-  if (res.success) {
-    friendList.value = res.friendList
-  } else {
-    ElMessage.error(res.error || '获取好友列表失败')
-  }
-}
-
 // 获取好友申请列表
 const fetchRequests = async () => {
-  const res = await request.get('/users/friends/requests')
+  const res = await request.get('/users/contacts/requests')
   if (res.success) {
     requestList.value = res.friendRequests || []
   } else {
@@ -240,7 +235,7 @@ const fetchRequests = async () => {
 
 // 同意申请
 const acceptRequest = async (friendId) => {
-  const res = await request.post('/users/friends/accept', { friendId })
+  const res = await request.post('/users/contacts/accept', { friendId })
   console.log(res) 
   if (res.success) {
     ElMessage.success('好友申请已同意')
@@ -252,7 +247,7 @@ const acceptRequest = async (friendId) => {
 
 // 拒绝申请
 const rejectRequest = async (friendId) => {
-  const res = await request.post('/users/friends/reject', { friendId })
+  const res = await request.post('/users/contacts/reject', { friendId })
   console.log(res)
   if (res.success) {
     ElMessage.success('好友申请已拒绝')
@@ -426,7 +421,7 @@ const rejectRequest = async (friendId) => {
 }
 
 .contact-item.active {
-  background-color: #e6f7ff;
+  background-color: #e9f7e9; 
   border-left: 3px solid #07c160;
 }
 </style>

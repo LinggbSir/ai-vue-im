@@ -11,11 +11,11 @@ router.post('/login', AuthController.login)
 
 // 用户相关路由
 router.get('/users/search', authMiddleware, UserController.searchUsers)
-router.post('/users/friends/add', authMiddleware, UserController.addFriend)
-router.get('/users/friends', authMiddleware, UserController.getFriendList)
-router.get('/users/friends/requests', authMiddleware, UserController.getFriendRequests)
-router.post('/users/friends/accept', authMiddleware, UserController.acceptFriendRequest)
-router.post('/users/friends/reject', authMiddleware, UserController.rejectFriendRequest)
+router.post('/users/contacts/add', authMiddleware, UserController.addFriend)
+router.get('/users/contacts', authMiddleware, UserController.getContactList)
+router.get('/users/contacts/requests', authMiddleware, UserController.getFriendRequests)
+router.post('/users/contacts/accept', authMiddleware, UserController.acceptFriendRequest)
+router.post('/users/contacts/reject', authMiddleware, UserController.rejectFriendRequest)
 router.get('/users/:id', authMiddleware, UserController.getUserById)
 
 // 会话相关路由

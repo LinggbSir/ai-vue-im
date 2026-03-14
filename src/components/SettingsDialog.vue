@@ -23,7 +23,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-// import { useUserStore } from '@/stores/user'
+import { closeSocket } from '@/utils/socket'
+// import { authStore } from '@/stores/user'
 
 // 控制弹窗显示隐藏
 const visible = ref(false)
@@ -32,10 +33,12 @@ const close = () => (visible.value = false)
 
 // 退出登录逻辑
 const router = useRouter()
-// const userStore = useUserStore()
+// const userStore = authStore()
 const handleLogout = () => {
   // userStore.logout()
   router.push('/login')
+  // 关闭 socket 连接
+  closeSocket()
   close()
 }
 

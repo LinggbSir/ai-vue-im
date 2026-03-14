@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 async function getSessions(userId) {
   const sql = `
-    SELECT session_id, user_id, type, display, last_msg_time, last_read_msg_id
+    SELECT session_id, user_id, target_id, type, display, last_msg_time, last_read_msg_id
     FROM sessions
     WHERE user_id = ?
   `;
