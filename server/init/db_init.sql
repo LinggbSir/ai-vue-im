@@ -1,15 +1,18 @@
+-- 创建数据库
 CREATE DATABASE IF NOT EXISTS im_db 
 DEFAULT CHARACTER SET utf8mb4 
-DEFAULT COLLATE utf8mb4_unicode_ci;
+COLLATE utf8mb4_unicode_ci;
 
+-- 切换到目标数据库
+USE im_db;
+
+-- 删除旧表（按依赖顺序：先删 messages，再删 sessions，最后删其他）
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS `sessions`;
 DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS friends;
 DROP TABLE IF EXISTS users;
-
-USE im_db;
 
 -- 用户表
 CREATE TABLE `users` (
@@ -69,23 +72,25 @@ CREATE TABLE `group_members` (
 
 -- 会话表
 CREATE TABLE `sessions` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+  `session_id` VARCHAR(50) NOT NULL COMMENT '公共会话ID，私聊为"较小ID_较大ID"，群聊为群组ID',
   `user_id` INT UNSIGNED NOT NULL COMMENT '用户ID',
-  `target_id` INT UNSIGNED NOT NULL COMMENT '对方ID（好友ID或群ID）',
-  `type` TINYINT NOT NULL COMMENT '0-私聊 1-群聊',
-  `display` TINYINT NOT NULL DEFAULT 1 COMMENT '1-显示 0-隐藏',
-  `last_msg_time` TIMESTAMP NULL COMMENT '最后一条消息时间，用于排序',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `target_id` INT UNSIGNED NOT NULL COMMENT '会话目标ID（好友ID或群ID）',
+  `type` TINYINT NOT NULL DEFAULT 0 COMMENT '会话类型：0-私聊，1-群聊',
+  `display` TINYINT NOT NULL DEFAULT 1 COMMENT '是否在会话列表显示：1-显示，0-隐藏',
+  `last_read_msg_id` BIGINT UNSIGNED DEFAULT 0 COMMENT '该用户最后阅读的消息ID',
+  `last_msg_time` TIMESTAMP NULL COMMENT '会话最后一条消息的时间（冗余，用于排序）',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '会话创建时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_target` (`user_id`, `target_id`, `type`), -- 防止重复会话
+  UNIQUE KEY `uk_session_user` (`session_id`, `user_id`) COMMENT '每个用户在每个会话中只有一条记录',
   KEY `idx_user_id` (`user_id`),
-  KEY `idx_target_id` (`target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  KEY `idx_session_id` (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户会话关系表';
 
--- 消息表
+-- 消息表（注意 session_id 改为 VARCHAR(50) 以匹配 sessions 表的公共标识）
 CREATE TABLE `messages` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `session_id` INT UNSIGNED NOT NULL COMMENT '所属会话ID',
+  `session_id` VARCHAR(50) NOT NULL COMMENT '公共会话ID，与sessions.session_id一致',
   `sender_id` INT UNSIGNED NOT NULL COMMENT '发送者ID',
   `receiver_type` TINYINT NOT NULL COMMENT '0-私聊 1-群聊',
   `receiver_id` INT UNSIGNED NOT NULL COMMENT '接收方ID（好友ID或群ID）',

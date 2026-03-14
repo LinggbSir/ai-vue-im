@@ -17,22 +17,27 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useMessagesStore } from '@/stores/message'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useMessageStore } from '@/stores/index'
+import { useRoute  } from 'vue-router'
 
-const friendId = ref(123) // 临时
+const route = useRoute()
 const inputMsg = ref('')
-const messagesStore = useMessagesStore()
-const currentSessionId = ref(friendId.value) // 假设当前会话 ID 就是好友 ID
-const messages = computed(() => messagesStore.getMessages(currentSessionId.value))
+const messagesStore = useMessageStore()
+const currentTargetId = ref(null) // 假设当前会话 ID 就是好友 ID
+const messages = computed(() => messagesStore.getMessages(currentTargetId.value))
+
+watch(() => route.params.targetId, (newTargetId) => {
+  currentTargetId.value = newTargetId
+})
 
 const sendMsg = () => {
   if (!inputMsg.value.trim()) return
-    messagesStore.addMessage(currentSessionId.value, {
+    messagesStore.addMessage(currentTargetId.value, {
       id: Date.now(),
       content: inputMsg.value,
       time: new Date().toLocaleTimeString().slice(0,5),
-      isSelf: true
+      isSelf: true                                                                                                   
     })
   inputMsg.value = ''
 }

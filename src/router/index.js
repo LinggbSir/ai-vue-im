@@ -37,13 +37,15 @@ const router = createRouter({
             list: SessionList,
             default: ChatArea
           },
-          children: {
-            path: ':friendId',
-            components: {
-              list: SessionList,
-              default: ChatArea
+          children: [
+            {
+              path: 'chatArea/:targetId',
+              components: {
+                list: SessionList,
+                default: ChatArea
+              }
             }
-          }
+          ]
         },
         {
           path: 'contacts',
@@ -71,13 +73,6 @@ const router = createRouter({
       ]
     }
   ]
-})
-
-console.log('注册的路由:', router.getRoutes().map(r => r.path))
-
-router.beforeEach((to, from, next) => {
-  console.log('当前导航目标:', to.path)
-  next()
 })
 
 export default router

@@ -11,33 +11,74 @@
       v-slot="{ navigate, href, isActive }"
     >
       <div class="list-content" :class="{ active: isActive }" @click="navigate">
-        <div class="session-item" v-for="session in sessionList" :key="session.id">
+        <div class="session-item" v-for="session in sessionList" :key="session.id" @click="selectSession(session)">
           <img :src="session.avatar" alt="avatar" />
           <div class="info">
-            <div class="name">{{ session.username }}</div>
+            <div class="name">{{ session.target_name }}</div>
             <div class="last-msg">{{ session.last_msg_time }}</div>
           </div>
         </div>
       </div>
     </router-link>
   </div>
+  <div class="session-list">
+    <div v-if="loading">加载中...</div>
+    <div v-else-if="sessionList.length === 0">暂无会话</div>
+    <div v-else>
+      <router-link
+        v-for="session in sessionList"
+        :key="session.id"
+        :to="`/chat/session/chatArea/${session.target_id}`"
+        custom
+        v-slot="{ navigate, href, isActive }"
+      >
+        <div class="list-content" :class="{ active: isActive }" @click="navigate">
+          <div class="session-item" v-for="session in sessionList" :key="session.id" @click="selectSession(session)">
+            <img :src="session.avatar" alt="avatar" />
+            <div class="info">
+              <div class="name">{{ session.target_name }}</div>
+              <div class="last-msg">{{ session.last_msg_time }}</div>
+            </div>
+          </div>
+        </div>
+      </router-link>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-
+import { ref, onMounted,computed, watch } from 'vue'
 import request from '@/utils/request'
+import {useRoute, useRouter} from 'vue-router'
+import { storeToRefs } from 'pinia'    
 
-const sessionList = ref([])
+const router = useRouter()
+const route = useRoute()
+import { useUserStore, useSessionStore } from '@/stores/index'
+const userStore = useUserStore()
+const sessionStore = useSessionStore()
 
+const { sessionList, loading } = storeToRefs(sessionStore)
 onMounted(async () => {
-  const res = await request.get('/sessions')
-  if (res.success) {
-    sessionList.value = res.sessions || []
-  } else {
-    ElMessage.error(res.error || '获取会话列表失败')
-  }
+  await sessionStore.getSessions()
 })
+
+const selectedSessionId = ref('')
+const targetSessionId = computed(() => {
+  const myId = userStore.myId
+  const targetId = route.params.targetId
+  if (!targetId) return null
+  return [myId, targetId].sort().join('_')
+})
+watch(targetSessionId, (newSessionId) => {
+  selectedSessionId.value = newSessionId
+}, { immediate: true })
+
+const selectSession = (session) => {
+  // 假设 session 中包含对方用户ID（私聊）或群组ID（群聊）
+  const friendId = session.targetId
+  router.push(`/chat/session/${friendId}`)
+}
 
 </script>
 

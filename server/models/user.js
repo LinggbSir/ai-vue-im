@@ -58,7 +58,7 @@ async function getFriendList(currentUserId) {
 async function getFriendRequests(currentUserId) {
   // 查询好友请求列表
   const sql = `
-    SELECT u.id, u.username, u.avatar, u.signature
+    SELECT u.id as friend_id, u.username, u.avatar, u.signature
     FROM friends f
     JOIN users u ON f.user_id = u.id
     WHERE f.friend_id = ? AND f.status = 0

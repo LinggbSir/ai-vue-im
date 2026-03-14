@@ -1,0 +1,1 @@
+const { getLastMessage } = require('../models/message');
