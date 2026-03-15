@@ -6,22 +6,24 @@ module.exports = {
   async register(ctx) {
     try {
       console.log('注册请求体:', ctx.request.body)
-      const { username, password } = ctx.request.body
-      if (!username || !password) {
+      const { echo_id, password } = ctx.request.body
+      if (!echo_id || !password) {
         ctx.status = 400
-        ctx.body = { success: false, status:400, error: 'Username and password required' }
+        ctx.body = { success: false, status:400, error: 'echo_id and password required' }
         return
       }
-      const existing = await findUserByUsername(username)
+      const existing = await findUserByUsername(echo_id)
       if (existing) {
         ctx.status = 409
-        ctx.body = { success: false, status:409, error: 'Username already exists' }
+        ctx.body = { success: false, status:409, error: 'echo_id already exists' }
         return
       }
       const hashedPassword = await bcrypt.hash(password, 10)
-      const userId = await createUser(username, hashedPassword) // 修正
-      const token = jwt.sign({ id: userId, username }, process.env.JWT_SECRET, { expiresIn: '7d' })
-      ctx.body = { success: true,  status:200, token, user: { id: userId, username } } // 添加 success 字段
+      const timestamp = Date.now().toString().slice(-6); // 取后6位
+      const nickName = `用户${timestamp}`;
+      const userId = await createUser(echo_id, nickName, hashedPassword) // 修正
+      const token = jwt.sign({ id: userId, echo_id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+      ctx.body = { success: true,  status:200, token, user: { id: userId, echo_id } } // 添加 success 字段
     } catch (err) {
       console.error('注册错误:', err)
       ctx.status = 500
@@ -32,8 +34,8 @@ module.exports = {
   async login(ctx) {
     try {
       console.log('登录请求体:', ctx.request.body)
-      const { username, password } = ctx.request.body
-      const user = await findUserByUsername(username)
+      const { echo_id, password } = ctx.request.body
+      const user = await findUserByUsername(echo_id)
       if (!user) {
         ctx.status = 401
         ctx.body = { success: false, status:401, error: 'Invalid credentials' }
@@ -47,7 +49,7 @@ module.exports = {
         return
       }
       // 登录成功，返回 JWT 令牌
-      const token = jwt.sign({ id: user.id, username }, process.env.JWT_SECRET, { expiresIn: '7d' })
+      const token = jwt.sign({ id: user.id, echo_id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
       ctx.body = { success: true, status:200, token, user }
     } catch (err) {

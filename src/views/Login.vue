@@ -21,8 +21,8 @@
           <div class="form-item">
             <input 
               type="text" 
-              v-model="username" 
-              placeholder="用户名"
+              v-model="echo_id" 
+              placeholder="EID"
               required
             />
           </div>
@@ -72,19 +72,19 @@ const toggleLoginMode = () => {
   isLoginMode.value = !isLoginMode.value
 }
 
-const username = ref('')
+const echo_id = ref('')
 const password = ref('')
 const remember = ref(false)
 
 const login = async () => {
-  if (!username.value || !password.value) {
+  if (!echo_id.value || !password.value) {
     ElMessage.warning('请输入用户名和密码')
     return
   }
 
   try {
     const data = await request.post('/login', {
-      username: username.value,
+      echo_id: echo_id.value,
       password: password.value
     })
 
@@ -107,14 +107,14 @@ const login = async () => {
   }
 }
 const register = async () => {
-  if (!username.value || !password.value) {
+  if (!echo_id.value || !password.value) {
     ElMessage.warning('请输入用户名和密码')
     return
   }
 
   try {
     const data = await request.post('/register', {
-      username: username.value,
+      echo_id: echo_id.value,
       password: password.value
     })
 
@@ -133,7 +133,7 @@ const register = async () => {
 
 const handleSubmit = async () => {
   loading.value = true
-  if (!username.value || !password.value) {
+  if (!echo_id.value || !password.value) {
     alert('请输入用户名和密码')
     return
   }

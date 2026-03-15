@@ -2,14 +2,14 @@ const pool = require('../config/db')
 
 module.exports = {
   // 用户模型
-  async findUserByUsername(username) {
-    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username])
+  async findUserByUsername(echo_id) {
+    const [rows] = await pool.query('SELECT * FROM users WHERE echo_id = ?', [echo_id])
     return rows[0]
   },
-  async createUser(username, hashedPassword) {
+  async createUser(echo_id, nickName, hashedPassword) {
     const [result] = await pool.query(
-      'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-      [username, hashedPassword]
+      'INSERT INTO users (echo_id, nick_name, password_hash) VALUES (?, ?, ?)',
+      [echo_id, nickName, hashedPassword]
     )
     return result.insertId
   },

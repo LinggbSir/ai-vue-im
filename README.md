@@ -8,7 +8,7 @@
 erDiagram
     users {
         int id PK "用户ID"
-        varchar username UK "用户名"
+        varchar echo_id UK "EID"
         varchar password_hash "密码哈希"
         varchar avatar "头像URL"
         varchar signature "个性签名"

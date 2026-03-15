@@ -16,18 +16,21 @@ DROP TABLE IF EXISTS users;
 
 -- 用户表
 CREATE TABLE `users` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `username` VARCHAR(50) NOT NULL COMMENT '用户名',
-  `password_hash` CHAR(60) NOT NULL COMMENT '密码哈希',
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `echo_id` VARCHAR(50) NOT NULL COMMENT '登录ID（唯一）',
+  `nick_name` VARCHAR(50) NOT NULL COMMENT '昵称（可重复）',
+  `password_hash` CHAR(60) NOT NULL COMMENT '密码哈希（bcrypt）',
   `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
   `signature` VARCHAR(100) DEFAULT NULL COMMENT '个性签名',
+  `gender` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '性别：0-未知，1-男，2-女',
   `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '1-正常 0-禁用',
+  `region` VARCHAR(100) DEFAULT NULL COMMENT '地区',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-正常，0-禁用',
   `last_active_at` TIMESTAMP NULL COMMENT '最后在线时间',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  UNIQUE KEY `uk_echo_id` (`echo_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 好友关系表
 CREATE TABLE `friends` (

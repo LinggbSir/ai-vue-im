@@ -14,18 +14,18 @@
         <!-- 对方消息的头像放在左侧 -->
         <img
           v-if="msg.from !== currentUserId"
-          :src="msg.avatar || defaultAvatar"
+          :src="msg.avatar"
           class="avatar"
           alt="avatar"
         />
         <div class="bubble-wrapper">
           <div class="bubble">{{ msg.content }}</div>
-          <div class="time">{{ formatTime(msg.createdAt) }}</div>
+          <div class="time">{{ formatTime(msg.created_at) }}</div>
         </div>
         <!-- 自己消息的头像放在右侧 -->
         <img
           v-if="msg.from === currentUserId"
-          :src="msg.avatar || defaultAvatar"
+          :src="msg.avatar"
           class="avatar"
           alt="avatar"
         />
@@ -52,8 +52,9 @@ const authStore = useAuthStore()
 const messageStore = useMessageStore()
 
 const { messagesBySession, loadingMoreBySession, hasMoreBySession } = storeToRefs(messageStore)
+const { userInfo } = storeToRefs(authStore)
 
-const currentUserId = authStore.userId
+const currentUserId = userInfo.value.id
 const targetId = computed(() => route.params.targetId) // 对方的用户ID
 const sessionId = computed(() => {
   const userId = currentUserId
@@ -84,8 +85,9 @@ let lastScrollTop = 0 // 记录上一次滚动位置，用于判断方向
 
 // 滚动到底部
 const scrollToBottom = () => {
+  const container = messageListRef.value
+  if (!container) return
   nextTick(() => {
-    const container = messageListRef.value
     if (container) {
       container.scrollTop = container.scrollHeight
     }
@@ -141,18 +143,15 @@ const loadMoreMessages = async () => {
 // 收到新消息时的处理
 const socket = getSocket()
 const handleNewMessage = (msg) => {
-  console.log(msg)
   messageStore.addMessage(sessionId.value, msg)
-  if (msg.sessionId === sessionId.value) {
+  if (msg.session_id === sessionId.value && msg.sender_id === currentUserId) {
     scrollToBottom()
   }
 }
 
 // 发送消息
 const sendMessage = async () => {
-  console.log('发送消息1:', inputText.value)
   if (!inputText.value.trim() || sending.value) return
-  console.log('发送消息2:', inputText.value)
   sending.value = true
   socket.emit('private message', {
     to: parseInt(targetId.value),
@@ -160,7 +159,6 @@ const sendMessage = async () => {
   })
   inputText.value = ''
   sending.value = false
-  // 乐观更新可以在此处添加本地消息，但一般等待服务端回显更可靠
 }
 
 // 监听路由参数变化（切换会话）
@@ -181,7 +179,7 @@ onUnmounted(() => {
 })
 
 const formatTime = (timestamp) => {
-  return dayjs(timestamp).format('HH:mm')
+  return dayjs(timestamp).format('YYYY-MM-DD HH:mm')
 }
 </script>
 

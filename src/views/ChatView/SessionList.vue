@@ -45,13 +45,14 @@ const router = useRouter()
 const route = useRoute()
 import { useAuthStore, useSessionStore } from '@/stores/index'
 const authStore = useAuthStore()
+const { userInfo } = storeToRefs(authStore)
 const sessionStore = useSessionStore()
 
 const { sessionList, loading } = storeToRefs(sessionStore)
 
 const selectedSessionId = ref('')
 const targetSessionId = computed(() => {
-  const userId = authStore.userId
+  const userId = userInfo.value.id
   const targetId = route.params.targetId
   if (!targetId) return null
   return [userId, targetId].sort().join('_')

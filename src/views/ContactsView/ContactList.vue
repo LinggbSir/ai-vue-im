@@ -73,7 +73,7 @@
             @click="navigate"
           >
             <img :src="friend.avatar || 'https://via.placeholder.com/40'" class="avatar" />
-            <span class="username">{{ friend.username }}</span>
+            <span class="username">{{ friend.echo_id }}</span>
           </div>
         </router-link>
         <div v-if="filteredFriends.length === 0" class="empty-tip">
@@ -92,7 +92,7 @@
             :src="stranger.avatar || 'https://via.placeholder.com/40'"
             class="avatar"
           />
-          <span class="username">{{ stranger.username }}</span>
+          <span class="username">{{ stranger.echo_id }}</span>
           <button class="add-btn" @click="addFriend(stranger.id)">添加</button>
         </div>
         <div v-if="strangerList.length === 0" class="empty-tip">
@@ -111,7 +111,7 @@
             :src="req.avatar || 'https://via.placeholder.com/40'"
             class="avatar"
           />
-          <span class="username">{{ req.username }}</span>
+          <span class="username">{{ req.echo_id }}</span>
           <div class="actions">
             <button class="accept-btn" @click="acceptRequest(req.friend_id)">同意</button>
             <button class="reject-btn" @click="rejectRequest(req.friend_id)">拒绝</button>

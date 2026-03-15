@@ -3,7 +3,7 @@
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="user" class="profile-content">
       <img :src="user.avatar || 'https://via.placeholder.com/100'" class="avatar" />
-      <h2>{{ user.username }}</h2>
+      <h2>{{ user.echo_id }}</h2>
       <p class="signature">{{ user.signature || '暂无个性签名' }}</p>
       <p class="email">{{ user.email || '暂无邮箱' }}</p>
       <button v-if="user.isFriend" class="chat-btn" @click="goToChat">发消息</button>
