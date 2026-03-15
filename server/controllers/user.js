@@ -26,8 +26,35 @@ const updateUserInfo = async (ctx) => {
     ctx.body = { success: false, error: '服务器错误' };
   }
 }
+const updateUserAvatar = async (ctx) => {
+  const file = ctx.file // 由 upload 中间件挂载到 ctx 上
+  if (!file) {
+    ctx.status = 400
+    ctx.body = { error: '请选择文件' }
+    return
+  }
+  try {
+    // 生成可访问的 URL（假设后端静态服务）
+    const baseUrl = process.env.BASE_URL
+    const avatarUrl = `${baseUrl}/avatar/${file.filename}`
+
+    // 更新数据库（示例）
+    const userId = ctx.state.user.id
+    await userModel.updateUserAvatar(userId, avatarUrl) // 需要你实现
+
+    ctx.body = {
+      success: true,
+      data: { avatarUrl }
+  }
+  } catch (err) {
+    console.log('更新用户头像失败：', err)
+    ctx.status = 500;
+    ctx.body = { success: false, error: '服务器错误' };
+  }
+}
 
 module.exports = {
   getUserInfo,
-  updateUserInfo
+  updateUserInfo,
+  updateUserAvatar
 }

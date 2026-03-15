@@ -1,5 +1,6 @@
 const Router = require('koa-router')
-const authMiddleware = require('../middlewares/auth'); // 引入中间件
+const authMiddleware = require('../middlewares/auth'); // 引入权限中间件
+const uploadMiddleware = require('../middlewares/upload')
 const AuthController = require('../controllers/auth')
 const userController = require('../controllers/user')
 const contactController = require('../controllers/contact')
@@ -14,6 +15,7 @@ router.post('/login', AuthController.login)
 // 获取用户信息
 router.get('/user', authMiddleware, userController.getUserInfo)
 router.put('/user/profile', authMiddleware, userController.updateUserInfo)
+router.post('/user/avatar', authMiddleware, uploadMiddleware, userController.updateUserAvatar)
 // 联系人相关路由
 router.get('/users/search', authMiddleware, contactController.searchUsers)
 router.post('/users/contacts/add', authMiddleware, contactController.addFriend)

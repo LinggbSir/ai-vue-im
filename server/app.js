@@ -4,6 +4,8 @@ const Koa = require('koa')
 const cors = require('@koa/cors')
 const bodyParser = require('koa-bodyparser')
 const http = require('http')
+const static = require('koa-static')
+const path = require('path')
 const { Server } = require('socket.io')
 const initSocket = require('./sockets')
 
@@ -24,6 +26,8 @@ const io = new Server(server, {
 app.use(cors())
 app.use(bodyParser())
 app.use(router.routes()).use(router.allowedMethods())
+// 配置静态文件服务中间件，将 uploads 目录设为静态目录
+app.use(static(path.join(__dirname, './uploads')))
 
 // 初始化 WebSocket 服务器
 const { userSockets } = initSocket(io)

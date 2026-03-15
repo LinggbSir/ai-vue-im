@@ -13,6 +13,15 @@ const updateUserInfo = async (user) => {
   );
 }
 
+const updateUserAvatar = async (id, avatar) => {
+  await pool.query(
+    'UPDATE users SET avatar = ? WHERE id = ?',
+    [avatar, id]
+  );
+}
+
 module.exports = {
-  updateUserInfo
+  getUserInfo,
+  updateUserInfo,
+  updateUserAvatar
 }
