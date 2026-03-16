@@ -37,3 +37,9 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+test_init.js
+server/.env
+server/uploads/
+server/static/
+server/.env

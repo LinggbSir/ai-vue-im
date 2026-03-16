@@ -110,13 +110,14 @@ module.exports = (io) => {
       const { to, candidate } = data; // to: 接收方用户ID, candidate: ICE Candidate
       const from = socket.userId;
       const candidateValid = candidate !== undefined
-      // console.log('接收 WebRTC Candidate:', { from, to, candidateValid });
+      console.log('接收 WebRTC Candidate:', { from, to, candidateValid });
       if (!to || !candidate) return;
 
       try {
         // 将 Candidate 发送给接收方（如果在线）
         const targetSocketId = userSockets.get(to);
         if (targetSocketId) {
+          console.log('转发candidate:');
           io.to(targetSocketId).emit('webrtc-candidate', { from, candidate });
         } else {
           // 用户不在线，Candidate 已存入数据库，下次上线可拉取

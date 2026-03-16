@@ -13,6 +13,8 @@ export function useWebRTC(options = {}) {
   const localStream = ref(null);
   const remoteStream = ref(null);
   const callStatus = ref('idle'); // idle, calling, connecting, connected
+  const remoteUserId = ref(null)
+  const pendingCandidates = ref([])
 
   // 创建RTCPeerConnection实例
   const createPeerConnection = () => {
@@ -24,8 +26,9 @@ export function useWebRTC(options = {}) {
     // 监听ICE candidate，通过信令发给对方
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('生成 candidate:', event.candidate);
         socket.emit('webrtc-candidate', {
-          targetUserId: options.remoteUserId,
+          to: remoteUserId.value,
           candidate: event.candidate
         });
       }
@@ -41,21 +44,30 @@ export function useWebRTC(options = {}) {
         onCallEnd?.();
       }
     };
+    pc.oniceconnectionstatechange = () => {
+      console.log('ICE状态:', pc.iceConnectionState);
+    };
+    pc.onicecandidateerror = (event) => {
+      console.error('ICE候选错误:', event.errorText, '地址:', event.url);
+    };
+
+    
 
     // 监听远端流，触发回调
     pc.ontrack = (event) => {
       remoteStream.value = event.streams[0];
       onRemoteStream?.(remoteStream.value);
+      console.log('收到远端流，轨道数:', event.streams[0].getTracks());
     };
+    window.pc = pc;
 
     return pc;
   };
 
   // 发起通话（主叫方）
-  const startCall = async (remoteUserId, video = false) => {
-    remoteUserId = parseInt(remoteUserId)
+  const startCall = async (callerId, video = false) => {
     if (!socket) return;
-    options.remoteUserId = remoteUserId;
+    remoteUserId.value = parseInt(callerId)
 
     // 获取本地音视频流
     try {
@@ -81,7 +93,7 @@ export function useWebRTC(options = {}) {
       const offer = await peerConnection.value.createOffer();
       await peerConnection.value.setLocalDescription(offer);
       socket.emit('webrtc-offer', {
-        to: remoteUserId,
+        to: remoteUserId.value,
         offer: offer.sdp
       });
       callStatus.value = 'calling';
@@ -91,9 +103,8 @@ export function useWebRTC(options = {}) {
   };
 
   // 接听通话（被叫方）
-  const acceptCall = async (remoteUserId, offerSdp, video = false) => {
-    remoteUserId = parseInt(remoteUserId)
-    options.remoteUserId = remoteUserId;
+  const acceptCall = async (callerId, offerSdp, video = false) => {
+    remoteUserId.value = parseInt(callerId)
     // 同样需要本地流
     try {
       localStream.value = await navigator.mediaDevices.getUserMedia({
@@ -116,12 +127,22 @@ export function useWebRTC(options = {}) {
       sdp: offerSdp
     });
 
+    // 处理缓存的 candidate
+    for (const candidate of pendingCandidates.value) {
+      try {
+        await peerConnection.value.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error('添加缓存的 ICE 候选失败', err);
+      }
+    }
+    pendingCandidates.value = []; 
+
     // 创建answer
     const answer = await peerConnection.value.createAnswer();
     await peerConnection.value.setLocalDescription(answer);
 
     socket.emit('webrtc-answer', {
-      to: remoteUserId,
+      to: remoteUserId.value,
       answer: answer.sdp
     });
     callStatus.value = 'connecting';
@@ -138,9 +159,17 @@ export function useWebRTC(options = {}) {
   };
 
   // 处理对方发来的ICE candidate
-  const handleCandidate = async (candidate) => {
-    if (!peerConnection.value) return;
-    await peerConnection.value.addIceCandidate(new RTCIceCandidate(candidate));
+  const handleCandidate = async (data) => {
+    const { from, candidate } = data;
+    if (!peerConnection.value) {
+      pendingCandidates.value.push(candidate);
+      return;
+    }
+    try {
+      await peerConnection.value.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err) {
+      console.error('添加 ICE 候选失败', err);
+    }
   };
 
   // 挂断通话

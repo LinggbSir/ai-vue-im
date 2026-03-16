@@ -33,6 +33,6 @@ app.use(static(path.join(__dirname, './uploads')))
 const { userSockets } = initSocket(io)
 
 // 启动 HTTP 服务器
-server.listen(process.env.PORT || 3000, () => {
+server.listen(process.env.PORT || 3000, '0.0.0.0', () => {
   console.log(`Server is running on port ${process.env.PORT || 3000}`)
 })

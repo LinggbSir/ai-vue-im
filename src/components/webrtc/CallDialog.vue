@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   // 控制弹框显示
@@ -70,6 +70,16 @@ const props = defineProps({
   connected: {
     type: Boolean,
     default: false
+  },
+  // 麦克风开关状态（由父组件控制）
+  micEnabled: {
+    type: Boolean,
+    default: true
+  },
+  // 扬声器开关状态（由父组件控制）
+  speakerEnabled: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -80,11 +90,6 @@ const emit = defineEmits([
   'cancel'
 ])
 
-// 内部状态：麦克风开关（默认开）
-const micEnabled = ref(true)
-// 扬声器开关（默认开）
-const speakerEnabled = ref(true)
-
 // 关闭弹框（通知父组件）
 const close = () => {
   emit('update:visible', false)
@@ -92,14 +97,12 @@ const close = () => {
 
 // 切换麦克风
 const toggleMic = () => {
-  micEnabled.value = !micEnabled.value
-  emit('toggle-mic', micEnabled.value)
+  emit('toggle-mic', !props.micEnabled)
 }
 
 // 切换扬声器
 const toggleSpeaker = () => {
-  speakerEnabled.value = !speakerEnabled.value
-  emit('toggle-speaker', speakerEnabled.value)
+  emit('toggle-speaker', !props.speakerEnabled)
 }
 
 // 取消通话
@@ -107,18 +110,10 @@ const cancel = () => {
   emit('cancel')
   close()
 }
-
-// 当 visible 变为 false 时，可重置内部状态（如果需要）
-watch(() => props.visible, (newVal) => {
-  if (!newVal) {
-    // 弹框关闭时，可以重置开关状态，但通常保留上次设置，可根据需求决定
-    // micEnabled.value = true
-    // speakerEnabled.value = true
-  }
-})
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .call-dialog-overlay {
   position: fixed;
   top: 0;
