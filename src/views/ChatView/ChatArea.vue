@@ -13,7 +13,7 @@
       >
         <!-- 对方消息的头像放在左侧 -->
         <img
-          v-if="msg.from !== currentUserId"
+          v-if="msg.sender_id !== currentUserId"
           :src="msg.avatar"
           class="avatar"
           alt="avatar"
@@ -24,28 +24,53 @@
         </div>
         <!-- 自己消息的头像放在右侧 -->
         <img
-          v-if="msg.from === currentUserId"
+          v-if="msg.sender_id === currentUserId"
           :src="msg.avatar"
           class="avatar"
           alt="avatar"
         />
       </div>
     </div>
+
+    <!-- 重构后的输入区域 -->
     <div class="input-area">
-      <input v-model="inputText" @keyup.enter="sendMessage" placeholder="输入消息..." />
-      <button @click="sendMessage" :disabled="sending">发送</button>
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="toolbar-btn" title="表情" @click="handleEmoji">😊</button>
+          <button class="toolbar-btn" title="文件" @click="handleFile">📎</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="toolbar-btn" title="音频通话" @click="startAudioCall">📞</button>
+          <button class="toolbar-btn" title="视频通话" @click="startVideoCall">📹</button>
+        </div>
+      </div>
+
+      <!-- 输入行：多行输入框 + 发送按钮 -->
+      <div class="input-row">
+        <textarea
+          v-model="inputText"
+          @keyup.enter="sendMessage"
+          placeholder="输入消息..."
+          rows="3"
+          class="message-input"
+        ></textarea>
+        <button class="send-btn" @click="sendMessage" :disabled="sending">发送</button>
+      </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import dayjs from 'dayjs'
+
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
+import { useCallStore } from '@/stores/call'
+
 import { getSocket } from '@/utils/socket'
-import dayjs from 'dayjs'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -55,7 +80,7 @@ const { messagesBySession, loadingMoreBySession, hasMoreBySession } = storeToRef
 const { userInfo } = storeToRefs(authStore)
 
 const currentUserId = userInfo.value.id
-const targetId = computed(() => route.params.targetId) // 对方的用户ID
+const targetId = computed(() => parseInt(route.params.targetId)) // 对方的用户ID
 const sessionId = computed(() => {
   const userId = currentUserId
   if (!userId || !targetId.value) return null
@@ -181,6 +206,26 @@ onUnmounted(() => {
 const formatTime = (timestamp) => {
   return dayjs(timestamp).format('YYYY-MM-DD HH:mm')
 }
+
+const handleEmoji = () => {
+  console.log('表情功能待实现');
+};
+
+const handleFile = () => {
+  console.log('文件发送待实现');
+};
+
+const callStore = useCallStore()
+const startAudioCall = () => {
+  console.log('开始音频通话:', targetId.value);
+  callStore.startCall('audio', targetId.value)
+};
+
+const startVideoCall = () => {
+  console.log('开始视频通话:', targetId.value);
+  callStore.startCall('video', targetId.value)
+};
+
 </script>
 
 <style scoped>
@@ -189,6 +234,7 @@ const formatTime = (timestamp) => {
   display: flex;
   flex-direction: column;
 }
+
 .message-list {
   flex: 1;
   overflow-y: auto;
@@ -196,6 +242,7 @@ const formatTime = (timestamp) => {
   display: flex;
   flex-direction: column;
 }
+
 .message {
   display: flex;
   align-items: flex-end; /* 底部对齐，常见设计 */
@@ -234,10 +281,11 @@ const formatTime = (timestamp) => {
   text-align: right;
 }
 .input-area {
-  display: flex;
-  padding: 12px;
   border-top: 1px solid #e5e5e5;
+  background-color: #fafafa;
+  padding: 8px 16px;
 }
+
 .input-area input {
   flex: 1;
   padding: 8px;
@@ -265,5 +313,78 @@ const formatTime = (timestamp) => {
   color: #999;
   font-size: 12px;
   cursor: default; /* 非点击，所以不需要 pointer */
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  height: 36px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  gap: 12px;
+}
+
+.toolbar-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.toolbar-btn:hover {
+  background-color: #e5e5e5;
+}
+
+/* 输入行 */
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end; /* 让按钮与 textarea 底部对齐 */
+}
+
+.message-input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none; /* 禁止调整大小，或允许垂直调整，自行决定 */
+  min-height: 60px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #07c160;
+}
+
+.send-btn {
+  padding: 10px 20px;
+  background-color: #07c160;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  height: fit-content; /* 高度自适应内容，与 textarea 底部对齐 */
+}
+
+.send-btn:hover:not(:disabled) {
+  background-color: #06b156;
+}
+
+.send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

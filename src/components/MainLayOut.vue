@@ -16,11 +16,13 @@
   </div>
   <!-- 放置弹窗组件，但控制权交给 SideNav 通过 provide/inject -->
   <SettingsDialog ref="settingsDialogRef" />
+  <Call />
 </template>
 
 <script setup>
 import SideNav from '@/components/SideNav.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
+import Call from '@/views/CallView/Call.vue'
 import { ref, provide } from 'vue'
 
 const settingsDialogRef = ref(null)

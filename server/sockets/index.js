@@ -63,6 +63,90 @@ module.exports = (io) => {
       console.log('用户断开:', socket.userId);
       userSockets.delete(socket.userId);
     });
+    socket.on('webrtc-offer', async (data) => {
+      const { to, offer } = data; // to: 接收方用户ID, offer: SDP Offer
+      const from = socket.userId;
+      const offerValid = offer !== undefined
+      console.log('接收 WebRTC Offer:', { from, to, offerValid });
+      
+      if (!to || !offer) return;
+
+      try {
+        // 将 Offer 发送给接收方（如果在线）
+        const targetSocketId = userSockets.get(to);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('webrtc-offer', { from, offer });
+        } else {
+          // 用户不在线，Offer 已存入数据库，下次上线可拉取
+          console.log('用户不在线，Offer 已保存');
+        }
+      } catch (err) {
+        console.error('发送 WebRTC Offer 失败:', err);
+        socket.emit('error', 'WebRTC Offer 发送失败');
+      }
+    });
+    socket.on('webrtc-answer', async (data) => {
+      const { to, answer } = data; // to: 接收方用户ID, answer: SDP Answer
+      const from = socket.userId;
+      const answerValid = answer !== undefined
+      console.log('发送 WebRTC Answer:', { from, to, answerValid});
+      if (!to || !answer) return;
+
+      try {
+        // 将 Answer 发送给接收方（如果在线）
+        const targetSocketId = userSockets.get(to);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('webrtc-answer', { from, answer });
+        } else {
+          // 用户不在线，Answer 已存入数据库，下次上线可拉取
+          console.log('用户不在线，Answer 已保存');
+        }
+      } catch (err) {
+        console.error('发送 WebRTC Answer 失败:', err);
+        socket.emit('error', 'WebRTC Answer 发送失败');
+      }
+    });
+    socket.on('webrtc-candidate', async (data) => {
+      const { to, candidate } = data; // to: 接收方用户ID, candidate: ICE Candidate
+      const from = socket.userId;
+      const candidateValid = candidate !== undefined
+      // console.log('接收 WebRTC Candidate:', { from, to, candidateValid });
+      if (!to || !candidate) return;
+
+      try {
+        // 将 Candidate 发送给接收方（如果在线）
+        const targetSocketId = userSockets.get(to);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('webrtc-candidate', { from, candidate });
+        } else {
+          // 用户不在线，Candidate 已存入数据库，下次上线可拉取
+          console.log('用户不在线，Candidate 已保存');
+        }
+      } catch (err) {
+        console.error('发送 WebRTC Candidate 失败:', err);
+        socket.emit('error', 'WebRTC Candidate 发送失败');
+      }
+    })
+    socket.on('call-end', async (data) => {
+      const { to } = data; // to: 接收方用户ID
+      const from = socket.userId;
+      console.log('接收 通话结束:', { from, to });
+      if (!to) return;
+
+      try {
+        // 将 通话结束 发送给接收方（如果在线）
+        const targetSocketId = userSockets.get(to);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('call-end', { from, to });
+        } else {
+          // 用户不在线， 通话结束 已存入数据库，下次上线可拉取
+          console.log('用户不在线， 通话结束 已保存');
+        }
+      } catch (err) {
+        console.error('发送 通话结束 失败:', err);
+        socket.emit('error', ' 通话结束 发送失败');
+      }
+    })
   });
   return { userSockets };
 };

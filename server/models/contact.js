@@ -47,12 +47,12 @@ async function addFriend(currentUserId, friendId) {
 async function getFriendList(currentUserId) {
   // 查询好友列表
   const sql = `
-    SELECT u.id, u.echo_id, u.avatar, u.signature
+    SELECT u.id, u.echo_id, u.nick_name, u.avatar, u.signature, u.gender, u.email, u.region
     FROM friends f
     JOIN users u ON f.friend_id = u.id
     WHERE f.user_id = ? AND f.status = 1
   `;
-  const [rows] = await pool.query(sql, [currentUserId, currentUserId]);
+  const [rows] = await pool.query(sql, [currentUserId]);
   return rows;
 }
 async function getFriendRequests(currentUserId) {
