@@ -8,7 +8,7 @@ export const initSocket = () => {
   const token = userStore.token || localStorage.getItem('token');
   if (!token) return null;
 
-  socket = io('http://localhost:3000', {
+  socket = io('http://192.168.2.250:3000', {
     auth: { token },
     transports: ['websocket'],
   });

@@ -28,7 +28,7 @@
           </div>
 
           <!-- 取消按钮 -->
-          <div class="control-item cancel" @click="cancel">
+          <div class="control-item cancel" @click="hangup">
             <div class="icon">📞❌</div>
             <span class="label">取消</span>
           </div>
@@ -45,10 +45,11 @@
       </div>
     </div>
   </Teleport>
+    <audio ref="remoteAudioRef" autoplay style="display: none"></audio>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { ref, watch, defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   // 控制弹框显示
@@ -80,14 +81,38 @@ const props = defineProps({
   speakerEnabled: {
     type: Boolean,
     default: true
+  },
+  remoteStream: {
+    type: MediaStream,
+    default: null
   }
 })
+
+const remoteAudioRef = ref(null)
+
+// 当远程流变化时，绑定到 audio 元素
+watch(() => props.remoteStream, (stream) => {
+  if (remoteAudioRef.value && stream) {
+    console.log('音频流更新', stream)
+    remoteAudioRef.value.srcObject = stream
+    remoteAudioRef.value.play().catch(e => {
+      console.warn('音频自动播放失败，可能需要用户手势', e)
+    })
+  }
+}, { immediate: true })
+
+// 扬声器开关控制静音
+watch(props.speakerEnabled, (enabled) => {
+  if (remoteAudioRef.value) {
+    remoteAudioRef.value.muted = !enabled
+  }
+}, { immediate: true })
 
 const emit = defineEmits([
   'update:visible',
   'toggle-mic',
   'toggle-speaker',
-  'cancel'
+  'hangup'
 ])
 
 // 关闭弹框（通知父组件）
@@ -106,8 +131,11 @@ const toggleSpeaker = () => {
 }
 
 // 取消通话
-const cancel = () => {
-  emit('cancel')
+const hangup = () => {
+  emit('hangup')
+  if (remoteAudioRef.value) {
+    remoteAudioRef.value.srcObject = null
+  }
   close()
 }
 </script>

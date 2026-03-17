@@ -64,10 +64,10 @@ module.exports = (io) => {
       userSockets.delete(socket.userId);
     });
     socket.on('webrtc-offer', async (data) => {
-      const { to, offer } = data; // to: 接收方用户ID, offer: SDP Offer
+      const { to, offer, type } = data; // to: 接收方用户ID, offer: SDP Offer
       const from = socket.userId;
       const offerValid = offer !== undefined
-      console.log('接收 WebRTC Offer:', { from, to, offerValid });
+      console.log('接收 WebRTC Offer:', { from, to, type, offerValid });
       
       if (!to || !offer) return;
 
@@ -75,7 +75,7 @@ module.exports = (io) => {
         // 将 Offer 发送给接收方（如果在线）
         const targetSocketId = userSockets.get(to);
         if (targetSocketId) {
-          io.to(targetSocketId).emit('webrtc-offer', { from, offer });
+          io.to(targetSocketId).emit('webrtc-offer', { from, offer, type });
         } else {
           // 用户不在线，Offer 已存入数据库，下次上线可拉取
           console.log('用户不在线，Offer 已保存');

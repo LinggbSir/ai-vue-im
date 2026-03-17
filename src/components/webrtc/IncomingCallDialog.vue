@@ -5,7 +5,7 @@
         <div class="caller-info">
           <img :src="callerAvatar" alt="avatar" class="avatar" />
           <span class="caller-name">{{ callerName }}</span>
-          <span class="call-type">邀请你语音通话</span>
+          <span class="call-type">邀请你{{ type === 'audio' ? '语音' : '视频' }}通话</span>
         </div>
         <div class="actions">
           <button class="btn reject" @click="reject">挂断</button>
@@ -21,6 +21,10 @@ const props = defineProps({
   visible: Boolean,
   callerName: String,
   callerAvatar: String,
+  type: {
+    type: String,
+    default: 'audio'
+  },
   callerId: [String, Number], // 用于识别对方
 })
 
