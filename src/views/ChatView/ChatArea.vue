@@ -19,7 +19,32 @@
           alt="avatar"
         />
         <div class="bubble-wrapper">
-          <div class="bubble">{{ msg.content }}</div>
+          <!-- 文本消息 -->
+          <div v-if="msg.msg_type === 0" class="bubble">{{ msg.content }}</div>
+
+          <!-- 文件消息 -->
+          <div v-else-if="msg.msg_type === 1" class="file-bubble">
+            <!-- 图片消息 -->
+            <div v-if="msg.fileInfo?.mimeType.startsWith('image/')" class="image-preview" @click="previewImage(msg.fileInfo.url)">
+              <img :src="msg.fileInfo.thumbnailUrl || msg.fileInfo.url" alt="图片" loading="lazy" />
+            </div>
+            <!-- 视频消息 -->
+            <div v-else-if="msg.fileInfo?.mimeType.startsWith('video/')" class="video-preview" @click="playVideo(msg.fileInfo.url)">
+              <video :src="msg.fileInfo.url" preload="metadata" style="display: none;"></video>
+              <img :src="msg.fileInfo.thumbnailUrl || '/video-placeholder.png'" alt="视频" />
+              <span class="play-icon">▶</span>
+            </div>
+            <!-- 其他文件 -->
+            <div v-else class="generic-file" @click="downloadFile(msg.fileInfo)">
+              <span class="file-icon">📎</span>
+              <div class="file-info">
+                <div class="file-name">{{ msg.fileInfo?.name || msg.content }}</div>
+                <div class="file-size">{{ formatSize(msg.fileInfo?.size) }}</div>
+                <a :href="msg.fileInfo?.url" target="_blank" download @click.stop>下载</a>
+              </div>
+            </div>
+          </div>
+
           <div class="time">{{ formatTime(msg.created_at) }}</div>
         </div>
         <!-- 自己消息的头像放在右侧 -->
@@ -38,7 +63,7 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <button class="toolbar-btn" title="表情" @click="handleEmoji">😊</button>
-          <button class="toolbar-btn" title="文件" @click="handleFile">📎</button>
+          <button class="toolbar-btn" title="文件" @click="triggerFileSelect">📎</button>
         </div>
         <div class="toolbar-right">
           <button class="toolbar-btn" title="音频通话" @click="startAudioCall">📞</button>
@@ -57,7 +82,21 @@
         ></textarea>
         <button class="send-btn" @click="sendMessage" :disabled="sending">发送</button>
       </div>
+      <input
+        ref="fileInput"
+        type="file"
+        style="display: none"
+        @change="handleFileSelected"
+      />
     </div>
+      <div v-if="previewVisible" class="image-preview-modal" @click.self="previewVisible = false">
+        <img :src="previewUrl" />
+        <span class="close" @click="previewVisible = false">✕</span>
+      </div>
+      <div v-if="videoVisible" class="video-modal" @click.self="videoVisible = false">
+        <video :src="videoUrl" controls autoplay style="width: 80%; height: auto;"></video>
+        <span class="close" @click="videoVisible = false">✕</span>
+      </div>
   </div>
 </template>
 <script setup>
@@ -71,6 +110,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useCallStore } from '@/stores/call'
 
 import { getSocket } from '@/utils/socket'
+import request from '@/utils/request'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -168,11 +208,19 @@ const loadMoreMessages = async () => {
 // 收到新消息时的处理
 const socket = getSocket()
 const handleNewMessage = (msg) => {
-  messageStore.addMessage(sessionId.value, msg)
+  console.log('newMsg', msg);
+  if (msg.temp_id) {
+    // 用真实消息替换临时消息
+    messageStore.updateTempMessage(msg.session_id, msg.temp_id, msg);
+  } else {
+    messageStore.addMessage(sessionId.value, msg);
+  }
+  console.log('messages', messages.value);
+  // 如果是自己发的消息，滚动到底部
   if (msg.session_id === sessionId.value && msg.sender_id === currentUserId) {
     scrollToBottom()
   }
-}
+};
 
 // 发送消息
 const sendMessage = async () => {
@@ -211,9 +259,76 @@ const handleEmoji = () => {
   console.log('表情功能待实现');
 };
 
-const handleFile = () => {
-  console.log('文件发送待实现');
+const fileInput = ref(null)
+const uploading = ref(false)
+const uploadProgress = ref(0)
+
+const triggerFileSelect = () => {
+  fileInput.value.click()
+}
+
+const handleFileSelected = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 生成临时ID
+  const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+  // 构造临时消息对象（用于立即显示）
+  const tempMsg = {
+    id: tempId,
+    sender_id: currentUserId,
+    receiver_id: targetId.value,
+    content: file.name,           // 显示文件名
+    msg_type: 1,
+    file_name: file.name,
+    file_size: file.size,
+    file_mime: file.type,
+    temp: true,
+    createdAt: new Date().toISOString()
+  };
+  console.log('tempMsg', tempMsg);
+
+  // 添加到 store
+  messageStore.addTempMessage(sessionId.value, tempId, tempMsg);
+
+  // 上传文件
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await request.post('/file/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (res.success) {
+      const { fileId, url, name, size, mimeType } = res.data;
+      // 通过 WebSocket 发送文件消息，带上 tempId
+      socket.emit('private message', {
+        to: targetId.value,
+        content: name,           // 文件名
+        fileId,
+        msgType: 1,
+        tempId                   // 让服务端原样返回
+      });
+    } else {
+      // 上传失败，移除临时消息（或显示失败）
+      messageStore.removeTempMessage(sessionId.value, tempId);
+      alert('上传失败：' + (res.error || '未知错误'));
+    }
+  } catch (err) {
+    console.error('上传错误', err);
+    messageStore.removeTempMessage(sessionId.value, tempId);
+    alert('网络错误，请稍后重试');
+  } finally {
+    event.target.value = '';
+  }
 };
+
+// 格式化文件大小
+const formatSize = (bytes) => {
+  if (bytes < 1024) return bytes + 'B'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + 'KB'
+  return (bytes / 1048576).toFixed(1) + 'MB'
+}
 
 const callStore = useCallStore()
 const startAudioCall = () => {
@@ -224,6 +339,30 @@ const startAudioCall = () => {
 const startVideoCall = () => {
   console.log('开始视频通话:', targetId.value);
   callStore.startCall('video', targetId.value)
+};
+
+const previewVisible = ref(false);
+const previewUrl = ref('');
+
+const previewImage = (url) => {
+  previewUrl.value = url;
+  previewVisible.value = true;
+};
+
+const videoVisible = ref(false);
+const videoUrl = ref('');
+
+const playVideo = (url) => {
+  videoUrl.value = url;
+  videoVisible.value = true;
+};
+
+const downloadFile = (fileInfo) => {
+  if (!fileInfo?.url) return;
+  const a = document.createElement('a');
+  a.href = fileInfo.url;
+  a.download = fileInfo.name; // 指定下载文件名
+  a.click();
 };
 
 </script>
@@ -250,8 +389,10 @@ const startVideoCall = () => {
   gap: 8px;
 }
 .message.self {
-  flex-direction: row-reverse; /* 自己消息头像在右侧 */
+  flex-direction: row; /* 自己消息头像在右侧 */
+  justify-content: flex-end;
 }
+
 .avatar {
   width: 36px;
   height: 36px;
@@ -386,5 +527,188 @@ const startVideoCall = () => {
 .send-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+/* 文件消息气泡 */
+.file-bubble {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f0f0f0;
+  padding: 12px;
+  border-radius: 8px;
+  min-width: 200px;
+}
+
+.self .file-bubble {
+  background-color: #07c160;
+  color: white;
+}
+
+.file-icon {
+  font-size: 24px;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  font-weight: 500;
+  word-break: break-word;
+  color: #333;
+}
+
+.file-size {
+  font-size: 12px;
+  opacity: 0.7;
+  color: #333;
+}
+
+.file-info a {
+  color: #07c160;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.self .file-info a {
+  color: white;
+}
+
+.file-info a:hover {
+  text-decoration: underline;
+}
+
+.sending-indicator {
+  display: inline-block;
+  margin-right: 8px;
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.image-preview-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.image-preview-modal img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+.image-preview {
+  max-width: 100%;          /* 受父级气泡宽度限制 */
+  max-height: 200px;        /* 限制最大高度，避免过高 */
+  border-radius: 8px;
+  overflow: hidden;         /* 防止内容溢出 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0; /* 加载时的背景色 */
+  cursor: pointer;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;      /* 保持比例，完整显示图片 */
+}
+.close {
+  position: absolute;
+  top: 20px; right: 30px;
+  color: white;
+  font-size: 40px;
+  cursor: pointer;
+}
+.video-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+/* 移除文件消息的气泡背景和内边距 */
+.file-bubble {
+  background: none !important;
+  padding: 0 !important;
+}
+
+/* 可选：给预览容器增加一点圆角，让视觉效果更柔和 */
+.image-preview {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.video-preview {
+  position: relative; /* 确保按钮相对该容器定位 */
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.video-preview .play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px; /* 稍大一些 */
+  color: white;
+  background: rgba(0, 0, 0, 0.5); /* 半透明黑色圆形背景 */
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* 点击穿透，由父容器处理 */
+  z-index: 2;
+  border: 2px solid rgba(255,255,255,0.3); /* 可选边框 */
+  box-sizing: border-box;
+}
+
+/* 如果之前为 .self .file-bubble 设置了特殊背景，一并清除 */
+.self .file-bubble {
+  background: none;
+}
+
+.generic-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e0e0e0;    /* 淡灰色边框 */
+  border-radius: 8px;            /* 圆角，与气泡风格统一 */
+  padding: 8px 12px;             /* 内边距，避免内容紧贴边框 */
+  background-color: transparent; /* 背景透明，如果之前没有背景 */
+}
+
+/* 可选：针对自己发送的文件消息，如果需要不同边框颜色，可以单独设置 */
+.self .generic-file {
+  border-color: #b0b0b0;         /* 自己消息的边框可以更深或更浅，根据喜好调整 */
 }
 </style>

@@ -1,7 +1,7 @@
 import { ref, onUnmounted } from 'vue';
 import { getSocket } from '@/utils/socket';
 
-export function useWebRTC(options = {}) {
+export function useWebRTCCall(options = {}) {
   const {
     onRemoteStream,        // 收到远端流时的回调
     onCallConnected,        // 通话连接成功回调

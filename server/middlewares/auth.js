@@ -5,6 +5,7 @@ module.exports = async (ctx, next) => {
   if (!token) {
     ctx.status = 401;
     ctx.body = { error: 'No token provided' };
+    console.error('No token provided');
     return;
   }
   try {
@@ -14,5 +15,6 @@ module.exports = async (ctx, next) => {
   } catch (err) {
     ctx.status = 401;
     ctx.body = { error: 'Invalid token' };
+    console.error('Invalid token:', err);
   }
 };

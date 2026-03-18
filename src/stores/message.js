@@ -80,6 +80,28 @@ export const useMessageStore = defineStore('message', () => {
     delete loadingMoreBySession.value[sessionId]
   }
 
+  const addTempMessage = (sessionId, tempId, message) => {
+    if (!messagesBySession.value[sessionId]) {
+      messagesBySession.value[sessionId] = [];
+    }
+    messagesBySession.value[sessionId].push({ ...message, id: tempId, temp: true });
+  };
+
+  const updateTempMessage = (sessionId, tempId, realMessage) => {
+    const msgs = messagesBySession.value[sessionId];
+    if (!msgs) return;
+    const index = msgs.findIndex(m => m.id === tempId);
+    if (index !== -1) {
+      msgs.splice(index, 1, { ...realMessage, temp: false });
+    }
+  };
+
+  const removeTempMessage = (sessionId, tempId) => {
+    const msgs = messagesBySession.value[sessionId];
+    if (!msgs) return;
+    messagesBySession.value[sessionId] = msgs.filter(m => m.id !== tempId);
+  };
+
   return {
     messagesBySession,
     getMessages,
@@ -88,6 +110,9 @@ export const useMessageStore = defineStore('message', () => {
     addMessage,
     loadMoreMessages,
     clearSessionMessages,
+    addTempMessage,
+    updateTempMessage,
+    removeTempMessage,
     loadingMoreBySession,
     hasMoreBySession
   }

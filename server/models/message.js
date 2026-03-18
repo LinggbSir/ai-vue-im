@@ -11,41 +11,70 @@ async function getLastMessage(sessionId) {
   const [rows] = await pool.query(sql, [sessionId]);
   return rows[0];
 }
-async function saveMessage({ session_id, sender_id, receiver_type, receiver_id, content, type = 0 }) {
+async function saveMessage(message) {
+  const { session_id, sender_id, receiver_type, receiver_id, content, type, status, msg_type, file_id } = message;
   const [result] = await pool.query(
-    `INSERT INTO messages (session_id, sender_id, receiver_type, receiver_id, content, type, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, NOW())`,
-    [session_id, sender_id, receiver_type, receiver_id, content, type]
+    `INSERT INTO messages 
+     (session_id, sender_id, receiver_type, receiver_id, content, status, msg_type, file_id, created_at) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [session_id, sender_id, receiver_type, receiver_id, content, status, msg_type, file_id, new Date()]
   );
   return result.insertId;
 }
 
 async function getMessagesBySession(sessionId, beforeId, limit) {
-  let sql, params
+  let sql, params;
   if (beforeId) {
     sql = `
       SELECT * FROM (
-          SELECT * FROM messages 
-          WHERE session_id = ? AND id < ? 
-          ORDER BY id DESC 
+          SELECT m.*, f.url AS file_url, f.name AS file_name, f.size AS file_size, f.mime_type AS file_mime, f.thumbnail_url AS file_thumbnail
+          FROM messages m
+          LEFT JOIN files f ON m.file_id = f.id
+          WHERE m.session_id = ? AND m.id < ?
+          ORDER BY m.id DESC
           LIMIT ?
-      ) AS t ORDER BY id ASC;
+      ) AS t ORDER BY t.id ASC;
     `;
-    params = [sessionId, parseInt(beforeId), parseInt(limit)]
+    params = [sessionId, parseInt(beforeId), parseInt(limit)];
   } else {
     sql = `
       SELECT * FROM (
-          SELECT * FROM messages 
-          WHERE session_id = ? 
-          ORDER BY id DESC 
+          SELECT m.*, f.url AS file_url, f.name AS file_name, f.size AS file_size, f.mime_type AS file_mime, f.thumbnail_url AS file_thumbnail
+          FROM messages m
+          LEFT JOIN files f ON m.file_id = f.id
+          WHERE m.session_id = ?
+          ORDER BY m.id DESC
           LIMIT ?
-      ) AS t ORDER BY id ASC;
+      ) AS t ORDER BY t.id ASC;
     `;
-    params = [sessionId, parseInt(limit)]
+    params = [sessionId, parseInt(limit)];
   }
-  console.log(sql, params)
   const [rows] = await pool.query(sql, params);
-  return rows;
+  const messages = rows.map(row => {
+    // 创建一个新对象，复制所有字段
+    const msg = { ...row };
+    
+    // 如果有文件（file_id 不为空），则构造 fileInfo 对象
+    if (row.file_id) {
+      msg.fileInfo = {
+        url: row.file_url,
+        name: row.file_name,
+        size: row.file_size,
+        mimeType: row.file_mime,
+        thumbnailUrl: row.file_thumbnail
+      };
+      
+      // 删除冗余字段，避免消息对象过大
+      delete msg.file_url;
+      delete msg.file_name;
+      delete msg.file_size;
+      delete msg.file_mime;
+      delete msg.file_thumbnail;
+    }
+    
+    return msg;
+  });
+  return messages;
 }
 
 

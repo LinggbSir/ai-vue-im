@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS friends;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS files;
 
 -- 用户表
 CREATE TABLE `users` (
@@ -98,7 +99,8 @@ CREATE TABLE `messages` (
   `receiver_type` TINYINT NOT NULL COMMENT '0-私聊 1-群聊',
   `receiver_id` INT UNSIGNED NOT NULL COMMENT '接收方ID（好友ID或群ID）',
   `content` TEXT NOT NULL COMMENT '消息内容',
-  `type` TINYINT NOT NULL DEFAULT 0 COMMENT '消息类型：0-文本 1-图片 2-文件 3-撤回消息',
+  `msg_type` TINYINT NOT NULL DEFAULT 0 COMMENT '消息类型：0-文本 1-图片 2-文件 3-撤回消息',
+  `file_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '关联文件ID（图片/文件消息）',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-发送失败 1-发送成功 2-撤回',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -108,3 +110,16 @@ CREATE TABLE `messages` (
   KEY `idx_created_at` (`created_at`),
   KEY `idx_session_time` (`session_id`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `files` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '文件ID，主键',
+  `user_id` INT UNSIGNED NOT NULL COMMENT '上传者用户ID',
+  `url` VARCHAR(255) NOT NULL COMMENT '文件访问URL（相对路径或完整URL）',
+  `thumbnail_url` VARCHAR(255) NULL COMMENT '缩略图URL（图片或视频第一帧）',
+  `name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
+  `size` BIGINT UNSIGNED NOT NULL COMMENT '文件大小（字节）',
+  `mime_type` VARCHAR(100) NOT NULL COMMENT '文件MIME类型',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`) COMMENT '按用户查询文件'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件信息表';

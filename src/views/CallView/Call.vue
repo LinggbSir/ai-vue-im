@@ -46,7 +46,7 @@ import { storeToRefs } from 'pinia'
 import { useCallStore } from '@/stores/call'
 import { useContactStore } from '@/stores/contact'
 import { getSocket } from '@/utils/socket'
-import { useWebRTC } from '@/components/webrtc/webrtc.js'
+import { useWebRTCCall } from '@/components/webrtc/webrtc_call.js'
 import AudioCallDialog from '@/components/webrtc/AudioCallDialog.vue'
 import IncomingCallDialog from '@/components/webrtc/IncomingCallDialog.vue'
 import VideoCallDialog from '@/components/webrtc/VideoCallDialog.vue'
@@ -82,7 +82,7 @@ const callConnected = ref(false)
 const remoteStream = ref(null)
 
 // WebRTC 实例
-const webrtc = useWebRTC({
+const webrtc = useWebRTCCall({
   onRemoteStream: (stream) => {
     remoteStream.value = stream
     console.log('收到远程流，视频轨道数:', stream.getVideoTracks().length);
