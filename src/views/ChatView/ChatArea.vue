@@ -107,7 +107,7 @@ import dayjs from 'dayjs'
 
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
-import { useCallStore } from '@/stores/call'
+import { useWebRTCStore } from '@/stores/webrtc'
 
 import { getSocket } from '@/utils/socket'
 import request from '@/utils/request'
@@ -292,6 +292,16 @@ const handleFileSelected = async (event) => {
   // 添加到 store
   messageStore.addTempMessage(sessionId.value, tempId, tempMsg);
 
+  if (!isCallActive.value) {
+    webRTCStore.startSendingFile(file, targetId.value)
+    console.log('通过WebRTC发送文件')
+    console.log(file.size)
+    window.file = file
+  } else {
+    sendFileByHttp(file)
+  }
+};
+const sendFileByHttp = async (file) => {
   // 上传文件
   const formData = new FormData();
   formData.append('file', file);
@@ -330,15 +340,16 @@ const formatSize = (bytes) => {
   return (bytes / 1048576).toFixed(1) + 'MB'
 }
 
-const callStore = useCallStore()
+const webRTCStore = useWebRTCStore()
+const isCallActive = computed(() => webRTCStore.isCallActive)
 const startAudioCall = () => {
   console.log('开始音频通话:', targetId.value);
-  callStore.startCall('audio', targetId.value)
+  webRTCStore.startCall('audio', targetId.value)
 };
 
 const startVideoCall = () => {
   console.log('开始视频通话:', targetId.value);
-  callStore.startCall('video', targetId.value)
+  webRTCStore.startCall('video', targetId.value)
 };
 
 const previewVisible = ref(false);

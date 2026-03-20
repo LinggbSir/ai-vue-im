@@ -12,7 +12,7 @@
 
     <AudioCallDialog
       v-model:visible="showAudioCall"
-
+      :remote-stream="remoteStream"
       :avatar="targetAvatar"
       :nickname="targetName"
       :connected="callConnected"
@@ -39,14 +39,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
-import { useCallStore } from '@/stores/call'
+import { useWebRTCStore } from '@/stores/webrtc'
 import { useContactStore } from '@/stores/contact'
 import { getSocket } from '@/utils/socket'
-import { useWebRTCCall } from '@/components/webrtc/webrtc_call.js'
 import AudioCallDialog from '@/components/webrtc/AudioCallDialog.vue'
 import IncomingCallDialog from '@/components/webrtc/IncomingCallDialog.vue'
 import VideoCallDialog from '@/components/webrtc/VideoCallDialog.vue'
@@ -55,10 +54,10 @@ import VideoCallDialog from '@/components/webrtc/VideoCallDialog.vue'
 
 const route = useRoute()
 const contactStore = useContactStore()
-const callStore = useCallStore()
+const webRTCStore = useWebRTCStore()
 
 const { contactList } = storeToRefs(contactStore)
-const { callType, targetId } = storeToRefs(callStore)
+const { callType, targetId } = storeToRefs(webRTCStore)
 
 const socket = getSocket()
 
@@ -76,26 +75,11 @@ const showAudioCall = ref(false)
 const showVideoCall = ref(false)
 const targetName = ref('')
 const targetAvatar = ref('')
-const callConnected = ref(false)
 
 // 远程流
-const remoteStream = ref(null)
-
-// WebRTC 实例
-const webrtc = useWebRTCCall({
-  onRemoteStream: (stream) => {
-    remoteStream.value = stream
-    console.log('收到远程流，视频轨道数:', stream.getVideoTracks().length);
-  },
-  onCallConnected: () => {
-    callConnected.value = true
-    console.log('通话连接成功')
-  }
-})
-
-window.webrtc = webrtc
-
-
+const remoteStream = inject('remoteStream')
+const callConnected = inject('callConnected')
+const webrtc = inject('webrtc')
 
 // 麦克风开关控制本地音频轨道
 watch(micEnabled, (enabled) => {
@@ -130,8 +114,6 @@ const handleToggleCamera = (val) => {
   cameraEnabled.value = val
 }
 
-
-
 // 请求通知权限
 const requestNotificationPermission = async () => {
   if (!('Notification' in window)) {
@@ -145,9 +127,7 @@ const requestNotificationPermission = async () => {
 
 // 发起通话
 const initiateCall = (targetId, type = 'audio') => {
-  console.log(targetId)
   callerInfo.value = contactList.value.find(c => c.id === targetId)
-  console.log('callerInfo.value', callerInfo.value)
   if (type === 'audio') {
     showAudioCall.value = true
   } else if (type === 'video') {
@@ -160,9 +140,6 @@ const initiateCall = (targetId, type = 'audio') => {
 const handleIncomingCall = (data) => {
   incomingCallData.value = data
   callerInfo.value = contactList.value.find(c => c.id === data.from)
-
-  console.log('来电数据:', data)
-  console.log('callerInfo.value', callerInfo.value)
 
   if (document.visibilityState === 'visible') {
     showIncoming.value = true
@@ -211,36 +188,32 @@ const acceptCall = () => {
   showIncoming.value = false
   targetName.value = callerInfo.value.nick_name
   targetAvatar.value = callerInfo.value.avatar
-  console.log('incomingCallData.value.type', incomingCallData.value.type)
   if (incomingCallData.value.type === 'audio') {
     showAudioCall.value = true
   } else if (incomingCallData.value.type === 'video') {
     showVideoCall.value = true
-    console.log('showVideoCall.value', showVideoCall.value)
   }
   webrtc.acceptCall(callerInfo.value.id, incomingCallData.value.offer, incomingCallData.value.type)
 }
 
 // 被动结束通话
 const endCall = () => {
-  console.log('被动结束通话')
   showAudioCall.value = false
   showVideoCall.value = false
   showIncoming.value = false
   incomingCallData.value = null
-  callStore.clearCall()
+  webRTCStore.clearCall()
   webrtc.endCall()
 }
 
 // 主动结束通话
 const rejectCall = () => {
-  console.log('主动结束通话')
   showAudioCall.value = false
   showVideoCall.value = false
   showIncoming.value = false
   incomingCallData.value = null
   webrtc.endCall()
-  callStore.clearCall()
+  webRTCStore.clearCall()
   socket?.emit('call-end', { to: callerInfo.value?.id })
 }
 
@@ -249,22 +222,17 @@ onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   socket?.on('webrtc-offer', handleIncomingCall)
-  socket?.on('webrtc-answer', webrtc.handleAnswer)
-  socket?.on('webrtc-candidate', webrtc.handleCandidate)
   socket?.on('call-end', endCall)
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
-
   socket?.off('webrtc-offer', handleIncomingCall)
-  socket?.off('webrtc-answer', webrtc.handleAnswer)
-  socket?.off('webrtc-candidate', webrtc.handleCandidate)
   socket?.off('call-end', endCall)
 })
 
-watch(() => callStore.callType, (newType) => {
-  console.log('callStore.callType', newType)
+watch(() => webRTCStore.callType, (newType) => {
+  console.log('webRTCStore.callType', newType)
     if (newType !== null) {
       initiateCall(targetId.value, newType)
     }

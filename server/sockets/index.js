@@ -117,6 +117,29 @@ module.exports = (io) => {
         socket.emit('error', 'WebRTC Offer 发送失败');
       }
     });
+    socket.on('webrtc-offer-file', async (data) => {
+      const { to, offer } = data; // to: 接收方用户ID, offer: SDP Offer
+      const from = socket.userId;
+      const offerValid = offer !== undefined
+      console.log('接收 WebRTC Offer-file:', { from, to, offerValid });
+      
+      if (!to || !offer) return;
+
+      try {
+        // 将 Offer 发送给接收方（如果在线）
+        const targetSocketId = userSockets.get(to);
+        if (targetSocketId) {
+          console.log('转发offer-file:');
+          io.to(targetSocketId).emit('webrtc-offer-file', { from, offer });
+        } else {
+          // 用户不在线，Offer 已存入数据库，下次上线可拉取
+          console.log('用户不在线，Offer 已保存');
+        }
+      } catch (err) {
+        console.error('发送 WebRTC Offer 失败:', err);
+        socket.emit('error', 'WebRTC Offer 发送失败');
+      }
+    });
     socket.on('webrtc-answer', async (data) => {
       const { to, answer } = data; // to: 接收方用户ID, answer: SDP Answer
       const from = socket.userId;

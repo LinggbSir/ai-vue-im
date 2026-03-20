@@ -17,20 +17,54 @@
   <!-- 放置弹窗组件，但控制权交给 SideNav 通过 provide/inject -->
   <SettingsDialog ref="settingsDialogRef" />
   <Call />
+  <FileTransfer />
 </template>
 
 <script setup>
 import SideNav from '@/components/SideNav.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
-import Call from '@/views/CallView/Call.vue'
-import { ref, provide } from 'vue'
+import { useWebRTCCall } from '@/components/webrtc/webrtc.js'
+import FileTransfer from '@/components/webrtc/FileTransfer.vue'
+import Call from '@/components/webrtc/Call.vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
+import { getSocket } from '@/utils/socket'
+
+const socket = getSocket()
 
 const settingsDialogRef = ref(null)
-
-// 提供一个对象，包含 open 方法，该方法实际调用弹窗组件的 open
 provide('settingsDialog', {
   open: () => settingsDialogRef.value?.open()
 })
+
+const remoteStream = ref(null)
+const callConnected = ref(false)
+provide('remoteStream', remoteStream)
+provide('callConnected', callConnected)
+
+
+// WebRTC 实例
+const webrtc = useWebRTCCall({
+  onRemoteStream: (stream) => {
+    remoteStream.value = stream
+    console.log('收到远程流，视频轨道数:', stream.getVideoTracks().length);
+  },
+  onCallConnected: () => {
+    callConnected.value = true
+    console.log('通话连接成功')
+  }
+})
+provide('webrtc', webrtc)
+
+onMounted(() => {
+  socket?.on('webrtc-answer', webrtc.handleAnswer)
+  socket?.on('webrtc-candidate', webrtc.handleCandidate)
+})
+onUnmounted(() => {
+  socket?.off('webrtc-answer', webrtc.handleAnswer)
+  socket?.off('webrtc-candidate', webrtc.handleCandidate)
+})
+
+window.webrtc = webrtc
 </script>
 
 <style scoped>
