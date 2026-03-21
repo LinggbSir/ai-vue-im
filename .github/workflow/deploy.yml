@@ -1,0 +1,42 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          PORT=${{ secrets.PORT }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          BASE_URL=${{ secrets.BASE_URL }}
+          EOF
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        run: |
+          # 将 .env 文件复制到服务器
+          scp .env root@${{ secrets.SERVER_IP }}:/var/www/ai-vue-im/server/.env
+          # 执行其他部署命令（git pull、安装依赖、重启等）
+          ssh root@${{ secrets.SERVER_IP }} "
+            cd /var/www/ai-vue-im &&
+            git pull origin main &&
+            cd server &&
+            npm install --production &&
+            pm2 restart echo-backend
+          "
