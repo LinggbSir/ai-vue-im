@@ -30,13 +30,18 @@ jobs:
 
       - name: Deploy to server
         run: |
-          # 将 .env 文件复制到服务器
+          # 上传 .env 到服务器后端目录
           scp .env root@${{ secrets.SERVER_IP }}:/var/www/ai-vue-im/server/.env
-          # 执行其他部署命令（git pull、安装依赖、重启等）
+
+          # 远程执行：拉取代码、安装后端依赖、构建前端、重启服务
           ssh root@${{ secrets.SERVER_IP }} "
             cd /var/www/ai-vue-im &&
             git pull origin main &&
             cd server &&
             npm install --production &&
-            pm2 restart echo-backend
+            pm2 restart echo-backend &&
+            cd .. &&
+            npm install &&
+            npm run build &&
+            echo 'Deployment finished'
           "
