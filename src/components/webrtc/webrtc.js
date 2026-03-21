@@ -113,7 +113,7 @@ export function useWebRTCCall(options = {}) {
   };
 
   // 接听通话（被叫方）
-  const acceptCall = async (callerId, offerSdp, type = 'audio') => {
+  const acceptCall = async (callerId, offer, type = 'audio') => {
     remoteUserId.value = parseInt(callerId)
     // 同样需要本地流
     try {
