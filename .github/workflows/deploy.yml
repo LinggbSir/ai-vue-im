@@ -30,11 +30,11 @@ jobs:
 
       - name: Deploy to server
         run: |
-          # 上传 .env 到服务器后端目录
-          scp .env root@${{ secrets.SERVER_IP }}:/var/www/ai-vue-im/server/.env
+          # 上传 .env 到服务器后端目录（添加 -o 选项）
+          scp -o StrictHostKeyChecking=no .env root@${{ secrets.SERVER_IP }}:/var/www/ai-vue-im/server/.env
 
-          # 远程执行：拉取代码、安装后端依赖、构建前端、重启服务
-          ssh root@${{ secrets.SERVER_IP }} "
+          # 远程执行命令（添加 -o 选项）
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} "
             cd /var/www/ai-vue-im &&
             git pull origin main &&
             cd server &&
