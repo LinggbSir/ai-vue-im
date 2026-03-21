@@ -251,12 +251,14 @@ const handleSubmit = async () => {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  flex-wrap: nowrap; /* 防止内部换行 */
+  width: 100%;       /* 确保宽度占满 */
 }
 .remember label {
   display: flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
+  white-space: nowrap; /* 强制文本不换行 */
 }
 .remember a {
   color: #07c160;
