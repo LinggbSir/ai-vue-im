@@ -21,25 +21,27 @@
           <!-- 麦克风开关 -->
           <div class="control-item" @click="toggleMic">
             <div class="icon" :class="{ 'icon-off': !micEnabled }">
-              <span v-if="micEnabled">🎤</span>
-              <span v-else>🎤❌</span>
+                <Mic v-if="micEnabled" />
+                <MicOff v-else />
             </div>
-            <span class="label">麦克风</span>
+            <span class="label">麦克风已{{ micEnabled ? '开' : '关' }}</span>
           </div>
 
           <!-- 取消按钮 -->
           <div class="control-item cancel" @click="hangup">
-            <div class="icon">📞❌</div>
+            <div class="icon">
+              <Phone />
+            </div>
             <span class="label">取消</span>
           </div>
 
           <!-- 扬声器开关 -->
           <div class="control-item" @click="toggleSpeaker">
             <div class="icon" :class="{ 'icon-off': !speakerEnabled }">
-              <span v-if="speakerEnabled">🔊</span>
-              <span v-else>🔇</span>
+              <Volume2 v-if="speakerEnabled" />
+              <VolumeOff v-else />
             </div>
-            <span class="label">扬声器</span>
+            <span class="label">扬声器已{{ speakerEnabled? '开' : '关' }}</span>
           </div>
         </div>
       </div>
@@ -50,6 +52,7 @@
 
 <script setup>
 import { ref, watch, defineProps, defineEmits } from 'vue'
+import { Mic, MicOff, Phone, Volume2, VolumeOff } from '@lucide/vue'
 
 const props = defineProps({
   // 控制弹框显示

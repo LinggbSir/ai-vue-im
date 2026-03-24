@@ -62,12 +62,12 @@
       <!-- 工具栏 -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <button class="toolbar-btn" title="表情" @click="handleEmoji">😊</button>
-          <button class="toolbar-btn" title="文件" @click="triggerFileSelect">📎</button>
+          <button class="toolbar-btn" title="表情" @click="handleEmoji"><Smile /></button>
+          <button class="toolbar-btn" title="文件" @click="triggerFileSelect"><FolderClosed /></button>
         </div>
         <div class="toolbar-right">
-          <button class="toolbar-btn" title="音频通话" @click="startAudioCall">📞</button>
-          <button class="toolbar-btn" title="视频通话" @click="startVideoCall">📹</button>
+          <button class="toolbar-btn" title="音频通话" @click="startAudioCall"><Phone /></button>
+          <button class="toolbar-btn" title="视频通话" @click="startVideoCall"><Video /></button>
         </div>
       </div>
 
@@ -75,8 +75,8 @@
       <div class="input-row">
         <textarea
           v-model="inputText"
+          ref="inputRef"
           @keyup.enter="sendMessage"
-          placeholder="输入消息..."
           rows="3"
           class="message-input"
         ></textarea>
@@ -104,6 +104,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
+import { Smile, FolderClosed, Phone, Video } from '@lucide/vue'
 
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
@@ -137,6 +138,7 @@ const hasMore = computed(() => hasMoreBySession.value[sessionId.value] !== false
 const messageListRef = ref(null)
 const inputText = ref('')
 const sending = ref(false)
+const inputRef = ref(null)
 
 // 初始化消息：首次加载最新的30条
 const loadInitialMessages = async () => {
@@ -245,6 +247,9 @@ watch([sessionId, targetId], async ([newSession, newTarget], [oldSession]) => {
 
 onMounted(() => {
   socket?.on('private message', handleNewMessage)
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
 })
 
 onUnmounted(() => {
@@ -447,8 +452,7 @@ const downloadFile = (fileInfo) => {
 }
 .input-area button {
   padding: 8px 16px;
-  background-color: #07c160;
-  color: white;
+  background-color: none;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -481,19 +485,24 @@ const downloadFile = (fileInfo) => {
 }
 
 .toolbar-btn {
+  color: #818181;          /* 初始图标颜色，根据你的设计可调整 */
   background: none;
   border: none;
   font-size: 20px;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .toolbar-btn:hover {
-  background-color: #e5e5e5;
+  color: #3f3f3f;
 }
 
+.toolbar-btn:active {
+  color: #07c160;          /* 点击时图标变为绿色 */
+  background-color: #e5e5e5; /* 可选，保持悬浮背景，也可不加 */
+}
 /* 输入行 */
 .input-row {
   display: flex;
@@ -503,26 +512,25 @@ const downloadFile = (fileInfo) => {
 
 .message-input {
   flex: 1;
-  border: 1px solid #ddd;
+  border: none;
   border-radius: 8px;
   padding: 10px;
   font-size: 14px;
   font-family: inherit;
   resize: none; /* 禁止调整大小，或允许垂直调整，自行决定 */
-  min-height: 60px;
-  max-height: 120px;
+  height: 150px;
   overflow-y: auto;
+  background-color: #fafafa;
 }
 
 .message-input:focus {
   outline: none;
-  border-color: #07c160;
 }
 
 .send-btn {
   padding: 10px 20px;
-  background-color: #07c160;
-  color: white;
+  background-color: #f0f0f0;
+  color: #07c160;
   border: none;
   border-radius: 8px;
   cursor: pointer;

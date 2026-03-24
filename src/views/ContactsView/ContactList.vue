@@ -42,7 +42,7 @@
           :disabled="searching"
           @click="handleSearchStranger"
         >
-          🔍
+          <Search />
         </button>
       </div>
 
@@ -127,6 +127,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { Search } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import request from '@/utils/request'
 import { useContactStore } from '@/stores/index'

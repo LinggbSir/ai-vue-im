@@ -1,58 +1,66 @@
 <template>
   <Teleport to="body">
     <div v-if="visible" class="video-dialog-overlay" @click.self="close">
-      <div class="video-dialog">
-        <!-- 关闭按钮 -->
+      <div class="video-dialog" :class="{ connected: connected }">
+        <!-- 关闭按钮（始终显示） -->
         <button class="close-btn" @click="close">✕</button>
 
-        <!-- 视频区域（包含本地/远程？但根据你的设计，这里只展示对方视频，本地视频可能需要另外处理，暂不考虑） -->
-        <div class="video-container">
+        <!-- 未接通时显示：头像、昵称、状态提示 -->
+        <template v-if="!connected">
+          <div class="avatar-container">
+            <img :src="avatar" alt="avatar" class="avatar" />
+          </div>
+          <h2 class="nickname">{{ nickname }}</h2>
+          <p class="status">等待对方接受邀请...</p>
+        </template>
+
+        <!-- 视频区域（未接通时显示占位符，接通后铺满弹框） -->
+        <div class="video-container" v-if="connected">
           <video
-            v-if="connected"
             ref="remoteVideoRef"
             autoplay
             playsinline
             class="remote-video"
           ></video>
-          <div v-else class="no-video-placeholder">
+          <!-- <div v-else class="no-video-placeholder">
             <span class="camera-icon">📹</span>
             <p>对方未接通</p>
-          </div>
+          </div> -->
         </div>
 
-        <!-- 底部控制栏（两行） -->
+        <!-- 底部控制栏（始终显示，接通后悬浮） -->
         <div class="controls">
-          <!-- 第一行：麦克风、摄像头、扬声器 -->
           <div class="row first-row">
             <div class="control-item" @click="toggleMic">
               <div class="icon" :class="{ 'icon-off': !micEnabled }">
-                <span v-if="micEnabled">🎤</span>
-                <span v-else>🎤❌</span>
+                <Mic v-if="micEnabled" />
+                <MicOff v-else />
               </div>
-              <span class="label">麦克风</span>
+              <span class="label">麦克风{{ micEnabled ? '开' : '关' }}</span>
             </div>
 
             <div class="control-item" @click="toggleCamera">
               <div class="icon" :class="{ 'icon-off': !cameraEnabled }">
-                <span v-if="cameraEnabled">📹</span>
-                <span v-else>📹❌</span>
+                <Video v-if="cameraEnabled" />
+                <VideoOff v-else />
               </div>
-              <span class="label">摄像头</span>
+              <span class="label">摄像头{{ cameraEnabled ? '开' : '关' }}</span>
             </div>
 
             <div class="control-item" @click="toggleSpeaker">
               <div class="icon" :class="{ 'icon-off': !speakerEnabled }">
-                <span v-if="speakerEnabled">🔊</span>
-                <span v-else>🔇</span>
+                <Volume2 v-if="speakerEnabled" />
+                <VolumeOff v-else />
               </div>
-              <span class="label">扬声器</span>
+              <span class="label">扬声器{{ speakerEnabled ? '开' : '关' }}</span>
             </div>
           </div>
 
-          <!-- 第二行：取消按钮（居中） -->
           <div class="row second-row">
             <div class="control-item cancel" @click="hangup">
-              <div class="icon">📞❌</div>
+              <div class="icon">
+                <Phone />
+              </div>
               <span class="label">取消</span>
             </div>
           </div>
@@ -64,17 +72,18 @@
 
 <script setup>
 import { nextTick, ref, watch } from 'vue'
+import { Mic, MicOff, Phone, Volume2, VolumeOff, Video, VideoOff } from '@lucide/vue'
 
 const props = defineProps({
   visible: Boolean,
   remoteStream: MediaStream,
   connected: Boolean,
+  avatar: String,
+  nickname: String,
   micEnabled: { type: Boolean, default: true },
   cameraEnabled: { type: Boolean, default: true },
   speakerEnabled: { type: Boolean, default: true }
 })
-
-window.rm = props.remoteStream?.value
 
 const emit = defineEmits([
   'update:visible',
@@ -86,42 +95,35 @@ const emit = defineEmits([
 
 const remoteVideoRef = ref(null)
 
-// 将绑定逻辑提取为函数
 const bindRemoteStream = () => {
   if (remoteVideoRef.value && props.remoteStream) {
-    remoteVideoRef.value.srcObject = props.remoteStream;
+    remoteVideoRef.value.srcObject = props.remoteStream
     remoteVideoRef.value.play().catch(e => {
-      console.warn('视频自动播放失败', e);
-    });
-    return true;
+      console.warn('视频自动播放失败', e)
+    })
+    return true
   }
-  return false;
-};
+  return false
+}
 
-// 监听 remoteStream 变化
 watch(() => props.remoteStream, (stream) => {
-  console.log('remoteStream 新值', stream);
   if (!bindRemoteStream()) {
-    console.log('视频元素尚未准备好，等待 connected');
+    console.log('视频元素尚未准备好，等待 connected')
   }
-}, { immediate: true });
+}, { immediate: true })
 
-// 监听 connected 变化，一旦变为 true，立即尝试绑定
 watch(() => props.connected, (connected) => {
   if (connected) {
-    console.log('connected 变为 true，尝试绑定流');
-    nextTick(() => bindRemoteStream());
+    nextTick(() => bindRemoteStream())
   }
-});
+})
 
-// 扬声器开关控制静音（视频元素也负责音频播放）
 watch(() => props.speakerEnabled, (enabled) => {
   if (remoteVideoRef.value) {
     remoteVideoRef.value.muted = !enabled
   }
 }, { immediate: true })
 
-// 关闭弹框
 const close = () => {
   emit('update:visible', false)
 }
@@ -140,7 +142,6 @@ const hangup = () => {
 </script>
 
 <style scoped>
-/* 样式与之前相同，略 */
 .video-dialog-overlay {
   position: fixed;
   top: 0;
@@ -156,7 +157,7 @@ const hangup = () => {
 
 .video-dialog {
   position: relative;
-  width: 700px;
+  width: 450px;
   height: 800px;
   background-color: #fff;
   border-radius: 24px;
@@ -164,6 +165,33 @@ const hangup = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.video-dialog.connected .avatar-container,
+.video-dialog.connected .nickname,
+.video-dialog.connected .status {
+  display: none;
+}
+.video-dialog.connected .video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 1;
+}
+.video-dialog.connected .close-btn {
+  z-index: 3;
+}
+.video-dialog.connected .label {
+  color: #fff;
+}
+.video-dialog.connected .icon {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.video-dialog.connected .icon-off {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .close-btn {
@@ -190,14 +218,36 @@ const hangup = () => {
   color: #333;
 }
 
-.video-container {
-  flex: 1;
-  background-color: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  position: relative;
+.avatar-container {
+  margin-top: 60px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #07c160;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  align-self: center;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nickname {
+  margin-top: 24px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+}
+
+.status {
+  margin-top: 12px;
+  font-size: 16px;
+  color: #999;
+  text-align: center;
 }
 
 .remote-video {
@@ -226,12 +276,24 @@ const hangup = () => {
   flex-direction: column;
   gap: 20px;
   background-color: #fff;
+  transition: all 0.2s;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+  border-radius: 0 0 24px 24px;
+  backdrop-filter: blur(8px);
 }
 
 .row {
   display: flex;
   justify-content: center;
   gap: 30px;
+}
+
+.first-row {
+  justify-content: space-around;
 }
 
 .control-item {
@@ -275,9 +337,5 @@ const hangup = () => {
 .label {
   font-size: 14px;
   color: #666;
-}
-
-.second-row {
-  margin-top: 0;
 }
 </style>
