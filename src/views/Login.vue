@@ -22,7 +22,7 @@
             <input 
               type="text" 
               v-model="echo_id" 
-              placeholder="EID"
+              placeholder="EchoID"
               required
             />
           </div>

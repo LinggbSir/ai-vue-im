@@ -4,7 +4,7 @@
     <template v-if="!editMode">
       <div class="profile-header">
         <img :src="userInfo.avatar || defaultAvatar" alt="avatar" />
-        <p>EID: {{ userInfo.echo_id }}</p>
+        <p>EchoID: {{ userInfo.echo_id }}</p>
         <p>个性签名：{{ userInfo.signature || '这个人很懒，什么都没留下' }}</p>
       </div>
       <div class="profile-detail">
