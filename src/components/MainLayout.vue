@@ -17,6 +17,7 @@
   <!-- 放置弹窗组件，但控制权交给 SideNav 通过 provide/inject -->
   <SettingsDialog ref="settingsDialogRef" />
   <Call />
+  <MessageManger />
   <FileTransfer />
 </template>
 
@@ -26,6 +27,7 @@ import SettingsDialog from '@/components/SettingsDialog.vue'
 import { useWebRTCCall } from '@/components/webrtc/webrtc.js'
 import FileTransfer from '@/components/webrtc/FileTransfer.vue'
 import Call from '@/components/webrtc/Call.vue'
+import MessageManger from '@/components/MessageManger.vue'
 import { ref, provide, onMounted, onUnmounted } from 'vue'
 import { getSocket } from '@/utils/socket'
 

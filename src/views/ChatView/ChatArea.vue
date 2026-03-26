@@ -207,23 +207,7 @@ const loadMoreMessages = async () => {
   }
 }
 
-// 收到新消息时的处理
 const socket = getSocket()
-const handleNewMessage = (msg) => {
-  console.log('newMsg', msg);
-  if (msg.temp_id) {
-    // 用真实消息替换临时消息
-    messageStore.updateTempMessage(msg.session_id, msg.temp_id, msg);
-  } else {
-    messageStore.addMessage(sessionId.value, msg);
-  }
-  console.log('messages', messages.value);
-  // 如果是自己发的消息，滚动到底部
-  if (msg.session_id === sessionId.value && msg.sender_id === currentUserId) {
-    scrollToBottom()
-  }
-};
-
 // 发送消息
 const sendMessage = async () => {
   if (!inputText.value.trim() || sending.value) return
@@ -236,6 +220,16 @@ const sendMessage = async () => {
   sending.value = false
 }
 
+// 监听当前会话的消息列表变化，当有新消息且发送者是当前用户时滚动到底部
+watch(() => messages.value.length, (newLen, oldLen) => {
+  if (newLen > oldLen) {
+    const lastMsg = messages.value[newLen - 1]
+    if (lastMsg.sender_id === currentUserId) {
+      scrollToBottom()
+    }
+  }
+})
+
 // 监听路由参数变化（切换会话）
 watch([sessionId, targetId], async ([newSession, newTarget], [oldSession]) => {
   if (newSession && newTarget) {
@@ -244,17 +238,6 @@ watch([sessionId, targetId], async ([newSession, newTarget], [oldSession]) => {
     scrollToBottom()
   }
 }, { immediate: true })
-
-onMounted(() => {
-  socket?.on('private message', handleNewMessage)
-  nextTick(() => {
-    inputRef.value?.focus()
-  })
-})
-
-onUnmounted(() => {
-  socket?.off('private message', handleNewMessage)
-})
 
 const formatTime = (timestamp) => {
   return dayjs(timestamp).format('YYYY-MM-DD HH:mm')
