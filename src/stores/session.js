@@ -32,6 +32,7 @@ export const useSessionStore = defineStore('session', () => {
   return {
     sessionList,
     loading,
-    getSessionList
+    getSessionList,
+    clearSessionList
   }
 })

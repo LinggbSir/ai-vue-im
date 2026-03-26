@@ -53,8 +53,29 @@ const updateUserAvatar = async (ctx) => {
   }
 }
 
+const getMediaFiles = async (ctx) => {
+  const id = ctx.state.user.id
+  const photos = await userModel.getMediaFiles(id)
+  ctx.body = { success: true, data: photos }
+}
+
+const getFiles = async (ctx) => {
+  const id = ctx.state.user.id
+  const files = await userModel.getFiles(id)
+  ctx.body = { success: true, data: files }
+}
+
+const getMessageCount = async (ctx) => {
+  const id = ctx.state.user.id
+  const count = await userModel.getMessageCount(id)
+  ctx.body = { success: true, data: count }
+}
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
-  updateUserAvatar
+  updateUserAvatar,
+  getMediaFiles,
+  getFiles,
+  getMessageCount
 }

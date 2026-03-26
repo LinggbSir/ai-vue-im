@@ -12,21 +12,34 @@
       </router-link>
     </div>
     <!-- 新增的设置按钮，放在导航按钮下方，通过 margin-top: auto 推到底部 -->
-    <div class="settings-btn" @click="openSettings">
-      <Settings />
+    <div class="settings-btn" @click="logout">
+      <LogOut />
     </div>
   </div>
 </template>
 
 <script setup>
-// 引入弹窗实例（通过父组件传递或者使用事件总线，这里使用最简单的：通过父组件引用）
-// 我们将在 MainLayout 中管理弹窗，并通过 props 或 provide/inject 传递引用。
-// 简单起见，我们使用事件总线（mitt）或 provide/inject。这里选用 provide/inject 方案。
-import { inject } from 'vue'
-import { MessageCircle, Users, User, Settings } from '@lucide/vue'
-const settingsDialog = inject('settingsDialog')
-const openSettings = () => {
-  settingsDialog?.open()
+import { MessageCircle, Users, User, LogOut } from '@lucide/vue'
+import { useRouter } from 'vue-router'
+import { closeSocket } from '@/utils/socket'
+import { useAuthStore, useContactStore, useMessageStore, useWebRTCStore, useSessionStore} from '@/stores'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const contactStore = useContactStore()
+const messageStore = useMessageStore()
+const webRTCStore = useWebRTCStore()
+const sessionStore = useSessionStore()
+const logout = () => {
+  router.push('/login')
+  // 关闭 socket 连接
+  closeSocket()
+  // 清空所有状态
+  authStore.logOut()
+  contactStore.clearContactList()
+  messageStore.clearSessionMessages()
+  webRTCStore.clearWebRTCState()
+  sessionStore.clearSessionList()
 }
 </script>
 

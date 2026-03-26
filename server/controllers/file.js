@@ -4,6 +4,7 @@ const fileModel = require('../models/file');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
+const fs = require('fs');
 const uploadDir = require('../middlewares/upload').uploadDirThumb; // 新增：从中间件获取缩略图目录
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
@@ -24,6 +25,11 @@ async function uploadFile(ctx) {
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
   const fileUrl = `${baseUrl}/file/${file.filename}`;
   let thumbnailUrl = '';
+
+    // 确保 thumb 目录存在
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 
   if (file.mimetype.startsWith('image/')) {
     const thumbnailPath = path.join(uploadDir, 'thumb_' + file.filename);

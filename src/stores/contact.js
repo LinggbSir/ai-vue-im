@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
@@ -7,6 +7,7 @@ export const useContactStore = defineStore('contact', () => {
   const contactList = ref([])
   const loading = ref(false)
   const loaded = ref(false)
+  const friendCount = computed(() => contactList.value.length)
   const getContactList = async () => {
     loading.value = true
     if (loaded.value) {
@@ -28,9 +29,12 @@ export const useContactStore = defineStore('contact', () => {
     contactList.value = []
     loaded.value = false
   }
+
   return {
     contactList,
     loading,
-    getContactList
+    friendCount,
+    getContactList,
+    clearContactList,
   }
 })

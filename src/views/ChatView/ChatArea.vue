@@ -280,7 +280,7 @@ const handleFileSelected = async (event) => {
   // 添加到 store
   messageStore.addTempMessage(sessionId.value, tempId, tempMsg);
 
-  if (!isCallActive.value) {
+  if (false) {
     webRTCStore.startSendingFile(file, targetId.value)
     console.log('通过WebRTC发送文件')
     console.log(file.size)
@@ -289,7 +289,7 @@ const handleFileSelected = async (event) => {
     sendFileByHttp(file)
   }
 };
-const sendFileByHttp = async (file) => {
+const sendFileByHttp = async (file, tempId) => {
   // 上传文件
   const formData = new FormData();
   formData.append('file', file);

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import request from '@/utils/request'
 
 export const useMessageStore = defineStore('message', () => {
@@ -102,6 +102,14 @@ export const useMessageStore = defineStore('message', () => {
     messagesBySession.value[sessionId] = msgs.filter(m => m.id !== tempId);
   };
 
+  const messageCount = computed(() => {
+    let total = 0
+    for (const msgs of Object.values(messagesBySession.value)) {
+      total += msgs.length
+    }
+    return total
+  })
+
   return {
     messagesBySession,
     getMessages,
@@ -114,6 +122,7 @@ export const useMessageStore = defineStore('message', () => {
     updateTempMessage,
     removeTempMessage,
     loadingMoreBySession,
-    hasMoreBySession
+    hasMoreBySession,
+    messageCount
   }
 })
