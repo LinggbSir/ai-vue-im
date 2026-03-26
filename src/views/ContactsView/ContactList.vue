@@ -73,7 +73,7 @@
             @click="navigate"
           >
             <img :src="friend.avatar || 'https://via.placeholder.com/40'" class="avatar" />
-            <span class="username">{{ friend.echo_id }}</span>
+            <span class="username">{{ friend.nick_name }}</span>
           </div>
         </router-link>
         <div v-if="filteredFriends.length === 0" class="empty-tip">
@@ -148,11 +148,11 @@ const requestCount = computed(() => requestList.value.length)
 
 // 过滤后的好友列表
 const filteredFriends = computed(() => {
-  // if (!searchText.value) {
-  //   // 聚焦时显示空，否则显示全部好友
-  //   return isFocus.value ? [] : contactList.value
-  // }
-  // return contactList.value.filter(f => f.name.includes(searchText.value))
+  if (!searchText.value) {
+    // 聚焦时显示空，否则显示全部好友
+    return isFocus.value ? [] : contactList.value
+  }
+  return contactList.value.filter(f => f.nick_name.includes(searchText.value))
   console.log(contactList.value.length)
   return contactList.value
 })

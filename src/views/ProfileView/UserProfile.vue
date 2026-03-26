@@ -1,74 +1,80 @@
 <template>
   <div class="user-profile">
-    <!-- 查看模式 -->
-    <template v-if="!editMode">
-      <div class="profile-header">
-        <img :src="userInfo.avatar || defaultAvatar" alt="avatar" />
-        <p>EchoID: {{ userInfo.echo_id }}</p>
-        <p>个性签名：{{ userInfo.signature || '这个人很懒，什么都没留下' }}</p>
-      </div>
-      <div class="profile-detail">
-        <div class="item"><span>昵称</span> <span>{{ userInfo.nick_name }}</span></div>
-        <div class="item"><span>性别</span> <span>{{ genderText }}</span></div>
-        <div class="item"><span>邮箱</span> <span>{{ userInfo.email || '未绑定' }}</span></div>
-        <div class="item"><span>地区</span> <span>{{ userInfo.region || '地球' }}</span></div>
-      </div>
-      <button class="edit-btn" @click="startEdit">编辑资料</button>
-    </template>
-
-    <!-- 编辑模式 -->
-    <template v-else>
-      <div class="edit-form">
-        <h3>编辑资料</h3>
-
-        <!-- 头像上传区域 -->
-        <div class="avatar-upload">
-          <img :src="previewAvatar || userInfo.avatar || defaultAvatar" class="avatar-preview" />
-          <div class="upload-actions">
-            <button type="button" class="upload-btn" @click="triggerFileSelect">更换头像</button>
-            <span v-if="uploading" class="upload-status">上传中...</span>
+    <div class="profile-card">
+      <!-- 查看模式 -->
+      <template v-if="!editMode">
+        <div class="profile-header">
+          <div class="avatar-wrapper">
+            <img :src="userInfo.avatar || defaultAvatar" class="avatar" />
           </div>
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            style="display: none"
-            @change="handleFileChange"
-          />
+          <div class="name-section">
+            <h2 class="nickname">{{ userInfo.nick_name }}</h2>
+            <p class="echo_id">Echo号：{{ userInfo.echo_id }}</p>
+          </div>
         </div>
+        <div class="info-list">
+          <div class="info-item"><span class="label">昵称</span> <span class="value">{{ userInfo.nick_name }}</span></div>
+          <div class="info-item"><span class="label">性别</span> <span class="value">{{ genderText }}</span></div>
+          <div class="info-item"><span class="label">邮箱</span> <span class="value">{{ userInfo.email || '未绑定' }}</span></div>
+          <div class="info-item"><span class="label">地区</span> <span class="value">{{ userInfo.region || '地球' }}</span></div>
+        </div>
+        <button class="edit-btn" @click="startEdit">编辑资料</button>
+      </template>
 
-        <div class="form-item">
-          <label>昵称</label>
-          <input v-model="editForm.nick_name" type="text" placeholder="请输入昵称" />
+      <!-- 编辑模式 -->
+      <template v-else>
+        <div class="edit-form">
+          <h3>编辑资料</h3>
+
+          <!-- 头像上传区域 -->
+          <div class="avatar-upload">
+            <img :src="previewAvatar || userInfo.avatar || defaultAvatar" class="avatar-preview" />
+            <div class="upload-actions">
+              <button type="button" class="upload-btn" @click="triggerFileSelect">更换头像</button>
+              <span v-if="uploading" class="upload-status">上传中...</span>
+            </div>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              style="display: none"
+              @change="handleFileChange"
+            />
+          </div>
+
+          <div class="form-item">
+            <label>昵称</label>
+            <input v-model="editForm.nick_name" type="text" placeholder="请输入昵称" />
+          </div>
+          <div class="form-item">
+            <label>个性签名</label>
+            <input v-model="editForm.signature" type="text" placeholder="请输入个性签名" />
+          </div>
+          <div class="form-item">
+            <label>性别</label>
+            <select v-model="editForm.gender">
+              <option value="0">保密</option>
+              <option value="1">男</option>
+              <option value="2">女</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label>邮箱</label>
+            <input v-model="editForm.email" type="email" placeholder="请输入邮箱" />
+          </div>
+          <div class="form-item">
+            <label>地区</label>
+            <input v-model="editForm.region" type="text" placeholder="请输入地区" />
+          </div>
+          <div class="form-actions">
+            <button class="save-btn" @click="saveProfile" :disabled="saving || uploading">
+              {{ saving ? '保存中...' : '保存' }}
+            </button>
+            <button class="cancel-btn" @click="cancelEdit">取消</button>
+          </div>
         </div>
-        <div class="form-item">
-          <label>个性签名</label>
-          <input v-model="editForm.signature" type="text" placeholder="请输入个性签名" />
-        </div>
-        <div class="form-item">
-          <label>性别</label>
-          <select v-model="editForm.gender">
-            <option value="0">保密</option>
-            <option value="1">男</option>
-            <option value="2">女</option>
-          </select>
-        </div>
-        <div class="form-item">
-          <label>邮箱</label>
-          <input v-model="editForm.email" type="email" placeholder="请输入邮箱" />
-        </div>
-        <div class="form-item">
-          <label>地区</label>
-          <input v-model="editForm.region" type="text" placeholder="请输入地区" />
-        </div>
-        <div class="form-actions">
-          <button class="save-btn" @click="saveProfile" :disabled="saving || uploading">
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
-          <button class="cancel-btn" @click="cancelEdit">取消</button>
-        </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -216,50 +222,104 @@ const saveProfile = async () => {
 <style scoped>
 .user-profile {
   height: 100%;
+  background-color: #f5f5f5; /* 深灰色背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow-y: auto;
   padding: 20px;
 }
+
+.profile-card {
+  width: 100%;
+  max-width: 800px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px 24px;
+}
+
+/* 查看模式样式（与原样式一致，但移除原来 .user-profile 中的 padding 等） */
 .profile-header {
   text-align: center;
   margin-bottom: 30px;
 }
-.profile-header img {
+.avatar-wrapper {
+  margin-bottom: 16px;
+}
+.avatar {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
 }
-.profile-detail {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+.name-section {
+  margin-bottom: 8px;
 }
-.item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
+.nickname {
+  font-size: 24px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 8px;
+}
+.echo_id {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+}
+
+.info-list {
+  width: 100%;
+  background-color: #fff;
+  border-top: 1px solid #e5e5e5;
   border-bottom: 1px solid #e5e5e5;
+  margin: 16px 0;
 }
-.item:last-child {
+.info-item {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+}
+.info-item:last-child {
   border-bottom: none;
 }
+.label {
+  width: 80px;
+  color: #8e8e93;
+  flex-shrink: 0;
+}
+.value {
+  flex: 1;
+  color: #333;
+  word-break: break-word;
+}
+
 .edit-btn {
   width: 100%;
   padding: 12px;
   background-color: #07c160;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 16px;
   cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 20px;
 }
+.edit-btn:hover {
+  background-color: #06b156;
+}
+
+/* 编辑模式样式 */
 .edit-form {
-  max-width: 400px;
-  margin: 0 auto;
+  width: 100%;
 }
 .edit-form h3 {
   text-align: center;
   margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 500;
 }
 .avatar-upload {
   display: flex;

@@ -120,8 +120,10 @@ module.exports = {
         data: {
           id: user.id,
           echo_id: user.echo_id,
+          nick_name: user.nick_name,
           avatar: user.avatar,
           signature: user.signature,
+          region: user.region,
           email: user.email,
           isFriend: isFriend
         }

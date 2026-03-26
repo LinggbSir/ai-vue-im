@@ -99,7 +99,7 @@ async function rejectFriendRequest(currentUserId, friendId) {
 }
 async function findUserById(id) {
   const [rows] = await pool.query(
-    'SELECT id, echo_id, avatar, signature, email FROM users WHERE id = ?',
+    'SELECT * FROM users WHERE id = ?',
     [id]
   )
   return rows[0]
