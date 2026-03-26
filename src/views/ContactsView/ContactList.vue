@@ -1,62 +1,23 @@
 <template>
   <div class="contact-list">
-    <!-- 顶部区域 -->
+    <!-- 顶部区域（保持不变） -->
     <div class="header">
-      <!-- 模式切换按钮组 -->
       <div class="mode-switch">
-        <button
-          :class="['mode-btn', { active: mode === 'friend' }]"
-          @click="switchMode('friend')"
-        >
-          好友
-        </button>
-        <button
-          :class="['mode-btn', { active: mode === 'stranger' }]"
-          @click="switchMode('stranger')"
-        >
-          陌生人
-        </button>
-        <button
-          :class="['mode-btn', { active: mode === 'request' }]"
-          @click="switchMode('request')"
-        >
-          申请
-          <span v-if="requestCount > 0" class="badge">{{ requestCount }}</span>
+        <button :class="['mode-btn', { active: mode === 'friend' }]" @click="switchMode('friend')">好友</button>
+        <button :class="['mode-btn', { active: mode === 'stranger' }]" @click="switchMode('stranger')">陌生人</button>
+        <button :class="['mode-btn', { active: mode === 'request' }]" @click="switchMode('request')">
+          申请<span v-if="requestCount > 0" class="badge">{{ requestCount }}</span>
         </button>
       </div>
 
-      <!-- 搜索栏（仅在好友/陌生人模式显示） -->
       <div v-if="mode !== 'request'" class="search-wrapper">
-        <input
-          type="text"
-          v-model="searchText"
-          :placeholder="mode === 'friend' ? '搜索好友...' : '搜索陌生人...'"
-          @focus="handleFocus"
-          @blur="handleBlur"
-          class="search-input"
-        />
-        <!-- 陌生人模式下的搜索按钮 -->
-        <button
-          v-if="mode === 'stranger'"
-          class="search-btn"
-          :disabled="searching"
-          @click="handleSearchStranger"
-        >
-          <Search />
-        </button>
+        <input type="text" v-model="searchText" :placeholder="mode === 'friend' ? '搜索好友...' : '搜索陌生人...'" @focus="handleFocus" @blur="handleBlur" class="search-input" />
+        <button v-if="mode === 'stranger'" class="search-btn" :disabled="searching" @click="handleSearchStranger"><Search /></button>
       </div>
 
-      <!-- 陌生人模式下的“取消”按钮（切换回好友模式） -->
-      <button
-        v-if="mode === 'stranger'"
-        class="mode-btn"
-        @click="switchToFriendMode"
-      >
-        取消
-      </button>
+      <button v-if="mode === 'stranger'" class="mode-btn" @click="switchToFriendMode">取消</button>
     </div>
 
-    <!-- 列表区域 -->
     <div class="list">
       <!-- 好友模式 -->
       <template v-if="mode === 'friend'">
@@ -65,61 +26,48 @@
           :key="friend.id"
           :to="`/chat/contacts/profile/${friend.id}`"
           custom
-          v-slot="{ navigate, href, isActive }"
+          v-slot="{ navigate, isActive }"
         >
-          <div
-            class="contact-item"
-            :class="{ active: isActive }"
-            @click="navigate"
-          >
-            <img :src="friend.avatar || '/default_avatar.png'" class="avatar" />
-            <span class="username">{{ friend.nick_name }}</span>
+          <div class="contact-item" :class="{ active: isActive }" @click="navigate">
+            <div class="avatar-wrapper">
+              <img :src="friend.avatar || '/default_avatar.png'" class="avatar" :class="{ offline: !isOnline(friend.id) }" />
+            </div>
+            <div class="info">
+              <div class="name-row">
+                <span class="name">{{ friend.nick_name }}</span>
+                <span class="status" :class="{ online: isOnline(friend.id) }">
+                  <span v-if="isOnline(friend.id)" class="online-dot"></span>
+                  {{ isOnline(friend.id) ? '在线' : '' }}
+                </span>
+              </div>
+              <div class="signature">{{ friend.signature || '' }}</div>
+            </div>
           </div>
         </router-link>
-        <div v-if="filteredFriends.length === 0" class="empty-tip">
-          {{ searchText && isFocus ? '无匹配好友' : '暂无好友' }}
-        </div>
+        <div v-if="filteredFriends.length === 0" class="empty-tip">{{ searchText && isFocus ? '无匹配好友' : '暂无好友' }}</div>
       </template>
 
-      <!-- 陌生人模式 -->
+      <!-- 陌生人模式（保持原样） -->
       <template v-else-if="mode === 'stranger'">
-        <div
-          v-for="stranger in strangerList"
-          :key="stranger.id"
-          class="contact-item"
-        >
-          <img
-            :src="stranger.avatar || '/default_avatar.png'"
-            class="avatar"
-          />
+        <div v-for="stranger in strangerList" :key="stranger.id" class="contact-item">
+          <img :src="stranger.avatar || '/default_avatar.png'" class="avatar" />
           <span class="username">{{ stranger.echo_id }}</span>
           <button class="add-btn" @click="addFriend(stranger.id)">添加</button>
         </div>
-        <div v-if="strangerList.length === 0" class="empty-tip">
-          {{ searching ? '搜索中...' : '输入关键词并点击搜索' }}
-        </div>
+        <div v-if="strangerList.length === 0" class="empty-tip">{{ searching ? '搜索中...' : '输入关键词并点击搜索' }}</div>
       </template>
 
-      <!-- 申请模式 -->
+      <!-- 申请模式（保持原样） -->
       <template v-else-if="mode === 'request'">
-        <div
-          v-for="req in requestList"
-          :key="req.id"
-          class="contact-item"
-        >
-          <img
-            :src="req.avatar || '/default_avatar.png'"
-            class="avatar"
-          />
+        <div v-for="req in requestList" :key="req.id" class="contact-item">
+          <img :src="req.avatar || '/default_avatar.png'" class="avatar" />
           <span class="username">{{ req.echo_id }}</span>
           <div class="actions">
             <button class="accept-btn" @click="acceptRequest(req.friend_id)">同意</button>
             <button class="reject-btn" @click="rejectRequest(req.friend_id)">拒绝</button>
           </div>
         </div>
-        <div v-if="requestList.length === 0" class="empty-tip">
-          暂无好友申请
-        </div>
+        <div v-if="requestList.length === 0" class="empty-tip">暂无好友申请</div>
       </template>
     </div>
   </div>
@@ -133,7 +81,7 @@ import request from '@/utils/request'
 import { useContactStore } from '@/stores/index'
 const contactStore = useContactStore()
 
-const { contactList, loading } = storeToRefs(contactStore)
+const { contactList, onlineStatus } = storeToRefs(contactStore)
 
 
 
@@ -153,9 +101,11 @@ const filteredFriends = computed(() => {
     return isFocus.value ? [] : contactList.value
   }
   return contactList.value.filter(f => f.nick_name.includes(searchText.value))
-  console.log(contactList.value.length)
-  return contactList.value
 })
+
+const isOnline = (userId) => {
+  return onlineStatus.value[userId] || false
+}
 
 
 // ---------- 方法 ----------
@@ -272,7 +222,7 @@ const rejectRequest = async (friendId) => {
   display: flex;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap; /* 防止空间不足换行 */
+  flex-wrap: wrap;
 }
 
 .mode-switch {
@@ -352,30 +302,86 @@ const rejectRequest = async (friendId) => {
 
 .contact-item {
   display: flex;
-  align-items: center;
-  padding: 10px 16px;
+  align-items: flex-start;
+  padding: 12px 16px;
   border-bottom: 1px solid #f5f5f5;
   transition: background 0.2s;
+  cursor: pointer;
 }
 
 .contact-item:hover {
   background-color: #f9f9f9;
 }
 
+.contact-item.active {
+  background-color: #e9f7e9;
+  border-left: 3px solid #07c160;
+}
+
+.avatar-wrapper {
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 12px;
 }
 
-.username {
+.avatar.offline {
+  opacity: 0.6;
+}
+
+.info {
   flex: 1;
-  font-size: 14px;
-  color: #333;
+  min-width: 0; /* 防止溢出 */
 }
 
+.name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  word-break: break-word;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #999;
+}
+
+.status.online {
+  color: #07c160;
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #07c160;
+  display: inline-block;
+}
+
+.signature {
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 其他样式保持不变（陌生人、申请模式、按钮等） */
 .add-btn {
   padding: 4px 10px;
   background-color: #07c160;
@@ -417,10 +423,5 @@ const rejectRequest = async (friendId) => {
   color: #999;
   padding: 20px;
   font-size: 14px;
-}
-
-.contact-item.active {
-  background-color: #e9f7e9; 
-  border-left: 3px solid #07c160;
 }
 </style>

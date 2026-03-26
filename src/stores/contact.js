@@ -30,11 +30,34 @@ export const useContactStore = defineStore('contact', () => {
     loaded.value = false
   }
 
+  const onlineStatus = ref({}); // { userId: true/false }
+  
+  const updateOnlineStatus = (userId, online) => {
+    onlineStatus.value[userId] = online;
+  };
+  
+  const setBatchOnlineStatus = (statusMap) => {
+    onlineStatus.value = { ...onlineStatus.value, ...statusMap };
+  };
+
+  const fetchFriendsOnlineStatus = async () => {
+    const friendIds = contactList.value.map(f => f.id);
+    if (friendIds.length === 0) return;
+    const res = await request.post('/users/contacts/online', { friendIds });
+    if (res.success) {
+      setBatchOnlineStatus(res.onlineStatus || {});
+    }
+  };
+
   return {
     contactList,
     loading,
     friendCount,
     getContactList,
     clearContactList,
+    onlineStatus,
+    updateOnlineStatus,
+    setBatchOnlineStatus,
+    fetchFriendsOnlineStatus
   }
 })

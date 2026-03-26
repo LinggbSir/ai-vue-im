@@ -10,6 +10,8 @@ const {
   createFriendship
 } = require('../models/contact');
 const { createSession } = require('../models/session');
+const { use } = require('../routes');
+const userSockets = require('../sockets/userSockets');
 
 module.exports = {
   async searchUsers(ctx) {
@@ -133,6 +135,22 @@ module.exports = {
       ctx.status = 500
       ctx.body = { error: '服务器错误' }
     }
+  },
+  async getFriendOnlineStatus(ctx) {
+    try {
+      const onlineStatus = {}
+      const { friendIds } = ctx.request.body
+      console.log(userSockets)
+      friendIds.forEach(friendId => {
+        onlineStatus[friendId] = userSockets.has(friendId)
+      })
+      ctx.body = { success: true, onlineStatus }
+    }
+    catch (err) {
+      console.error(err)
+      ctx.status = 500
+      ctx.body = { error: '服务器错误' }
+    }
   }
-}
+} 
 

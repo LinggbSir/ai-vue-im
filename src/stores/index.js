@@ -12,6 +12,7 @@ export { useSessionStore, useMessageStore, useAuthStore, useContactStore, useWeb
 export async function initAllStores() {
   await Promise.all([
     useSessionStore().getSessionList(),
-    useContactStore().getContactList()
+    useContactStore().getContactList(),
   ])
+  await useContactStore().fetchFriendsOnlineStatus()
 }

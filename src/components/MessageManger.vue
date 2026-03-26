@@ -7,12 +7,14 @@ import { getSocket } from '@/utils/socket'
 import { useMessageStore } from '@/stores/message'
 import { useSessionStore } from '@/stores/session'
 import { useAuthStore } from '@/stores/auth'
+import { useContactStore } from '@/stores/contact'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const socket = getSocket()
 const messageStore = useMessageStore()
 const sessionStore = useSessionStore()
+const contactStore = useContactStore()
 const authStore = useAuthStore()
 const { userInfo } = storeToRefs(authStore)
 
@@ -37,15 +39,12 @@ const handleNewMessage = async (msg) => {
 
 
 watch(() => route.params.targetId, async (newTarget, oldTarget) => {
-  console.log('监听到路由参数变化', newTarget, oldTarget)
   if (oldTarget) {
     const oldSession = [oldTarget, currentUserId].sort().join('_')
-    console.log('oldSession', oldSession)
     await updateSession(oldSession)
   }
   if (newTarget) {
     const newSession = [newTarget, currentUserId].sort().join('_')
-    console.log('newSession', newSession)
     await updateSession(newSession)
   }
 })
@@ -61,12 +60,18 @@ const updateSession = async (sessionId) => {
 onMounted(() => {
   if (socket) {
     socket.on('private message', handleNewMessage)
+    socket.on('user-status', ({ userId, online }) => {
+      contactStore.updateOnlineStatus(userId, online);
+    });
   }
 })
 
 onUnmounted(() => {
   if (socket) {
     socket.off('private message', handleNewMessage)
+    socket.off('user-status', ({ userId, online }) => {
+      contactStore.updateOnlineStatus(userId, online);
+    });
   }
 })
 </script>

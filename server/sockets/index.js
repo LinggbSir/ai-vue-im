@@ -1,10 +1,11 @@
 const messageModel = require('../models/message'); 
 const fileModel = require('../models/file');
+const contactModel = require('../models/contact');
 const jwt = require('jsonwebtoken');
+const userSockets = require('./userSockets');
 
 module.exports = (io) => {
   // 存储在线用户 socketId 与 userId 的映射（已在之前的代码中）
-  const userSockets = new Map();
 
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
@@ -19,6 +20,14 @@ module.exports = (io) => {
   io.on('connection', (socket) => {
     console.log('用户连接:', socket.userId);
     userSockets.set(socket.userId, socket.id);
+
+    // 将上线消息广播给在线好友
+    contactModel.getFriendList(socket.userId).then(friends => {
+      friends.forEach(friend => {
+        if (!userSockets.has(friend.id)) return;
+        io.to(userSockets.get(friend.id)).emit('user-status', { userId: socket.userId, online: true });
+      });
+    });
 
     // 监听私聊消息
     socket.on('private message', async (data) => {
@@ -95,6 +104,13 @@ module.exports = (io) => {
     socket.on('disconnect', () => {
       console.log('用户断开:', socket.userId);
       userSockets.delete(socket.userId);
+      // 广播离线消息给好友
+      contactModel.getFriendList(socket.userId).then(friends => {
+        friends.forEach(friend => {
+          if (!userSockets.has(friend.id)) return;
+          io.to(userSockets.get(friend.id)).emit('user-status', { userId: socket.userId, online: false });
+        });
+      });
     });
     socket.on('webrtc-offer', async (data) => {
       const { to, offer, type } = data; // to: 接收方用户ID, offer: SDP Offer

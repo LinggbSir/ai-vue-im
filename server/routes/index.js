@@ -28,6 +28,7 @@ router.get('/users/contacts/requests', authMiddleware, contactController.getFrie
 router.post('/users/contacts/accept', authMiddleware, contactController.acceptFriendRequest)
 router.post('/users/contacts/reject', authMiddleware, contactController.rejectFriendRequest)
 router.get('/users/:id', authMiddleware, contactController.getUserById)
+router.post('/users/contacts/online', authMiddleware, contactController.getFriendOnlineStatus)
 
 // 会话相关路由
 router.get('/sessions', authMiddleware, SessionController.getSessionList)
