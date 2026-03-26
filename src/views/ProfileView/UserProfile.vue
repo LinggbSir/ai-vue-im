@@ -5,7 +5,7 @@
       <template v-if="!editMode">
         <div class="profile-header">
           <div class="avatar-wrapper">
-            <img :src="userInfo.avatar || defaultAvatar" class="avatar" />
+            <img :src="userInfo.avatar || '/default_avatar.png'" class="avatar" />
           </div>
           <div class="name-section">
             <h2 class="nickname">{{ userInfo.nick_name }}</h2>
@@ -28,7 +28,7 @@
 
           <!-- 头像上传区域 -->
           <div class="avatar-upload">
-            <img :src="previewAvatar || userInfo.avatar || defaultAvatar" class="avatar-preview" />
+            <img :src="previewAvatar || userInfo.avatar || '/default_avatar.png'" class="avatar-preview" />
             <div class="upload-actions">
               <button type="button" class="upload-btn" @click="triggerFileSelect">更换头像</button>
               <span v-if="uploading" class="upload-status">上传中...</span>

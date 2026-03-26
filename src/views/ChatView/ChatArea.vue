@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-area" ref="chatAreaRef">
+  <div v-if="route.params.targetId" class="chat-area" ref="chatAreaRef">
     <div class="message-list" ref="messageListRef" @scroll="handleScroll">
       <!-- 加载更多指示器 -->
       <div v-if="showLoadMore" class="loading-more-tip">{{ loadingMore ? '加载中...' : '查看更多消息' }}</div>
@@ -14,7 +14,7 @@
         <!-- 对方消息的头像放在左侧 -->
         <img
           v-if="msg.sender_id !== currentUserId"
-          :src="msg.avatar"
+          :src="msg.sender_avatar || '/default_avatar.png'"
           class="avatar"
           alt="avatar"
         />
@@ -50,7 +50,7 @@
         <!-- 自己消息的头像放在右侧 -->
         <img
           v-if="msg.sender_id === currentUserId"
-          :src="msg.avatar"
+          :src="userInfo.avatar || '/default_avatar.png'"
           class="avatar"
           alt="avatar"
         />
@@ -98,9 +98,10 @@
         <span class="close" @click="videoVisible = false">✕</span>
       </div>
   </div>
+  <div v-else class="loading">请选择聊天对象</div>
 </template>
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
@@ -110,12 +111,14 @@ import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
 import { useWebRTCStore } from '@/stores/webrtc'
 
+
 import { getSocket } from '@/utils/socket'
 import request from '@/utils/request'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const messageStore = useMessageStore()
+
 
 const { messagesBySession, loadingMoreBySession, hasMoreBySession } = storeToRefs(messageStore)
 const { userInfo } = storeToRefs(authStore)
@@ -233,11 +236,14 @@ watch(() => messages.value.length, (newLen, oldLen) => {
 // 监听路由参数变化（切换会话）
 watch([sessionId, targetId], async ([newSession, newTarget], [oldSession]) => {
   if (newSession && newTarget) {
-    // 先清空当前会话的消息？可以选择保留缓存，这里不清空，因为已经按session存储了
-    await loadInitialMessages()
+    // 首次加载消息时
+    if (!messagesBySession.value[newSession] || messagesBySession.value[newSession].length === 0) {
+      await loadInitialMessages()
+    }
     scrollToBottom()
   }
 }, { immediate: true })
+
 
 const formatTime = (timestamp) => {
   return dayjs(timestamp).format('YYYY-MM-DD HH:mm')
@@ -248,8 +254,6 @@ const handleEmoji = () => {
 };
 
 const fileInput = ref(null)
-const uploading = ref(false)
-const uploadProgress = ref(0)
 
 const triggerFileSelect = () => {
   fileInput.value.click()

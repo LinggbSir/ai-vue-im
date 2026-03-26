@@ -27,9 +27,17 @@ async function getMessagesBySession(sessionId, beforeId, limit) {
   if (beforeId) {
     sql = `
       SELECT * FROM (
-          SELECT m.*, f.url AS file_url, f.name AS file_name, f.size AS file_size, f.mime_type AS file_mime, f.thumbnail_url AS file_thumbnail
+          SELECT 
+            m.*, 
+            f.url AS file_url, 
+            f.name AS file_name, 
+            f.size AS file_size, 
+            f.mime_type AS file_mime, 
+            f.thumbnail_url AS file_thumbnail,
+            sender.avatar AS sender_avatar
           FROM messages m
           LEFT JOIN files f ON m.file_id = f.id
+          LEFT JOIN users sender ON m.sender_id = sender.id
           WHERE m.session_id = ? AND m.id < ?
           ORDER BY m.id DESC
           LIMIT ?
@@ -39,9 +47,17 @@ async function getMessagesBySession(sessionId, beforeId, limit) {
   } else {
     sql = `
       SELECT * FROM (
-          SELECT m.*, f.url AS file_url, f.name AS file_name, f.size AS file_size, f.mime_type AS file_mime, f.thumbnail_url AS file_thumbnail
+          SELECT 
+            m.*, 
+            f.url AS file_url, 
+            f.name AS file_name, 
+            f.size AS file_size, 
+            f.mime_type AS file_mime, 
+            f.thumbnail_url AS file_thumbnail,
+            sender.avatar AS sender_avatar
           FROM messages m
           LEFT JOIN files f ON m.file_id = f.id
+          LEFT JOIN users sender ON m.sender_id = sender.id
           WHERE m.session_id = ?
           ORDER BY m.id DESC
           LIMIT ?
@@ -51,10 +67,9 @@ async function getMessagesBySession(sessionId, beforeId, limit) {
   }
   const [rows] = await pool.query(sql, params);
   const messages = rows.map(row => {
-    // 创建一个新对象，复制所有字段
     const msg = { ...row };
     
-    // 如果有文件（file_id 不为空），则构造 fileInfo 对象
+    // 如果有文件（file_id 不为空），构造 fileInfo 对象
     if (row.file_id) {
       msg.fileInfo = {
         url: row.file_url,
@@ -64,7 +79,6 @@ async function getMessagesBySession(sessionId, beforeId, limit) {
         thumbnailUrl: row.file_thumbnail
       };
       
-      // 删除冗余字段，避免消息对象过大
       delete msg.file_url;
       delete msg.file_name;
       delete msg.file_size;

@@ -16,16 +16,16 @@
           :class="{ active: isActive }"
           @click="navigate"
         >
-          <img :src="session.avatar" alt="avatar" class="avatar" />
+          <img :src="session.target_avatar || '/default_avatar.png'" alt="avatar" class="avatar" />
           <div class="info">
             <div class="info-header">
               <span class="name">{{ session.target_name }}</span>
               <span class="time">{{ formatTime(session.last_msg_time) }}</span>
             </div>
             <div class="last-msg-wrapper">
-              <span class="last-msg">{{ session.last_msg || '暂无消息' }}</span>
+              <span class="last-msg">{{ session.last_msg_content || '暂无消息' }}</span>
               <!-- 如果有未读消息，显示绿色角标（可选） -->
-              <span v-if="session.unread" class="unread-badge">{{ session.unread }}</span>
+              <span v-if="session.unread_count" class="unread-badge">{{ session.unread_count }}</span>
             </div>
           </div>
         </div>
@@ -35,8 +35,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted,computed, watch } from 'vue'
-import request from '@/utils/request'
+import { ref,computed, watch } from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import { storeToRefs } from 'pinia'    
 import dayjs from 'dayjs'
@@ -60,12 +59,6 @@ const targetSessionId = computed(() => {
 watch(targetSessionId, (newSessionId) => {
   selectedSessionId.value = newSessionId
 }, { immediate: true })
-
-const selectSession = (session) => {
-  // 假设 session 中包含对方用户ID（私聊）或群组ID（群聊）
-  const friendId = session.targetId
-  router.push(`/chat/session/${friendId}`)
-}
 
 // 时间格式化函数
 const formatTime = (timestamp) => {
@@ -177,7 +170,7 @@ const formatTime = (timestamp) => {
 
 /* 未读小红点 */
 .unread-badge {
-  background-color: #07c160;
+  background-color: #fa5151;
   color: white;
   font-size: 10px;
   min-width: 18px;

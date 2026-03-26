@@ -89,7 +89,7 @@ const fetchUserInfo = async (id) => {
 }
 
 const goToChat = () => {
-  router.push(`/chat/session?friendId=${userId.value}`)
+  router.push(`/chat/session/chatArea/${userId.value}`)
 }
 
 const startAudioCall = () => {

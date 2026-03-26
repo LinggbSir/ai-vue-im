@@ -31,6 +31,7 @@ router.get('/users/:id', authMiddleware, contactController.getUserById)
 
 // 会话相关路由
 router.get('/sessions', authMiddleware, SessionController.getSessionList)
+router.put('/sessions/:sessionId/read', authMiddleware, SessionController.updateLastReadMsg);
 
 // 消息相关路由
 router.get('/messages', authMiddleware, MessageController.getMessages)

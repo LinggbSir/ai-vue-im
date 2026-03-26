@@ -67,14 +67,14 @@ module.exports = (io) => {
           status: 1,
           msg_type: msgType,      // 新增：0-文本，1-文件
           file_id: fileId || null, // 新增：关联文件ID
-          fileInfo: {}
+          fileInfo: {},
+          created_at: new Date().toISOString()
         };
         pushMsg.fileInfo.url = fileInfo?.url || null;
         pushMsg.fileInfo.thumbnailUrl = fileInfo?.thumbnail_url || null;
         pushMsg.fileInfo.name = fileInfo?.name || null;
         pushMsg.fileInfo.size = fileInfo?.size || null;
         pushMsg.fileInfo.mimeType = fileInfo?.mime_type || null;
-        console.log('pushMsg', pushMsg);
         // 发送给接收方
         const targetSocketId = userSockets.get(to);
         if (targetSocketId) {
@@ -83,6 +83,7 @@ module.exports = (io) => {
           console.log('用户不在线，消息已保存');
         }
         pushMsg.temp_id = tempId; // 原样返回
+        console.log('pushMsg', pushMsg);
         // 回传给发送方
         socket.emit('private message', pushMsg);
       } catch (err) {

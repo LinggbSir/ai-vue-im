@@ -10,6 +10,14 @@ export const useMessageStore = defineStore('message', () => {
   // 记录每个会话是否正在加载更多
   const loadingMoreBySession = ref({})
 
+  const messageCount = computed(() => {
+    let total = 0
+    for (const msgs of Object.values(messagesBySession.value)) {
+      total += msgs.length
+    }
+    return total
+  })
+
   // 获取某个会话的消息
   const getMessages = (sessionId) => messagesBySession.value[sessionId] || []
 
@@ -39,7 +47,7 @@ export const useMessageStore = defineStore('message', () => {
   }
 
   // 异步加载历史消息
-  const loadMoreMessages = async (sessionId) => {
+  const loadMoreMessages = async (sessionId, firstLoad = false) => {
     if (loadingMoreBySession.value[sessionId]) return
     const currentMessages = messagesBySession.value[sessionId] || []
     // 获取当前列表中最旧的消息ID（最早的一条）
@@ -102,16 +110,17 @@ export const useMessageStore = defineStore('message', () => {
     messagesBySession.value[sessionId] = msgs.filter(m => m.id !== tempId);
   };
 
-  const messageCount = computed(() => {
-    let total = 0
-    for (const msgs of Object.values(messagesBySession.value)) {
-      total += msgs.length
-    }
-    return total
-  })
+  const getLastMessage = (sessionId) => {
+    const msgs = messagesBySession.value[sessionId];
+    if (!msgs) return null;
+    return msgs[msgs.length - 1];
+  }
 
   return {
     messagesBySession,
+    loadingMoreBySession,
+    hasMoreBySession,
+    messageCount,
     getMessages,
     setMessages,
     prependMessages,
@@ -121,8 +130,6 @@ export const useMessageStore = defineStore('message', () => {
     addTempMessage,
     updateTempMessage,
     removeTempMessage,
-    loadingMoreBySession,
-    hasMoreBySession,
-    messageCount
+    getLastMessage
   }
 })

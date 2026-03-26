@@ -2,7 +2,7 @@
   <div class="profile-sidebar">
     <!-- 用户简略信息（可选） -->
     <div class="user-summary">
-      <img :src="userInfo.avatar || defaultAvatar" class="avatar" />
+      <img :src="userInfo.avatar || '/default_avatar.png'" class="avatar" />
       <div class="info">
         <div class="name">{{ userInfo.nick_name }}</div>
         <div class="echo-id">Echo号：{{ userInfo.echo_id }}</div>
