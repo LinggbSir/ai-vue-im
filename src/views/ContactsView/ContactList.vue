@@ -72,7 +72,7 @@
             :class="{ active: isActive }"
             @click="navigate"
           >
-            <img :src="friend.avatar || 'https://via.placeholder.com/40'" class="avatar" />
+            <img :src="friend.avatar || '/default_avatar.png'" class="avatar" />
             <span class="username">{{ friend.nick_name }}</span>
           </div>
         </router-link>
@@ -89,7 +89,7 @@
           class="contact-item"
         >
           <img
-            :src="stranger.avatar || 'https://via.placeholder.com/40'"
+            :src="stranger.avatar || '/default_avatar.png'"
             class="avatar"
           />
           <span class="username">{{ stranger.echo_id }}</span>
@@ -108,7 +108,7 @@
           class="contact-item"
         >
           <img
-            :src="req.avatar || 'https://via.placeholder.com/40'"
+            :src="req.avatar || '/default_avatar.png'"
             class="avatar"
           />
           <span class="username">{{ req.echo_id }}</span>
