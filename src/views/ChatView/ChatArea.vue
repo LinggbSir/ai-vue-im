@@ -62,7 +62,17 @@
       <!-- 工具栏 -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <button class="toolbar-btn" title="表情" @click="handleEmoji"><Smile /></button>
+          <button class="toolbar-btn" title="表情" @click="toggleEmojiPanel">
+            <Smile />
+          </button>
+          <!-- 表情面板 -->
+          <div v-show="showEmojiPanel" class="emoji-panel">
+            <div class="emoji-list">
+              <span v-for="emoji in emojiList" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">
+                {{ emoji }}
+              </span>
+            </div>
+          </div>
           <button class="toolbar-btn" title="文件" @click="triggerFileSelect(false)"><FolderClosed /></button>
           <button class="toolbar-btn" title="AI帮聊" @click="handleAIChat"><Bot v-if="!aiChatLoading" /><Loader v-else /></button>
         </div>
@@ -103,7 +113,7 @@
   <div v-else class="loading">请选择聊天对象</div>
 </template>
 <script setup>
-import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
@@ -146,6 +156,15 @@ const inputText = ref('')
 const sending = ref(false)
 const inputRef = ref(null)
 const fileTransferType = ref(false)
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 
 // 初始化消息：首次加载最新的30条
 const loadInitialMessages = async () => {
@@ -253,9 +272,43 @@ const formatTime = (timestamp) => {
   return dayjs(timestamp).format('YYYY-MM-DD HH:mm')
 }
 
-const handleEmoji = () => {
-  console.log('表情功能待实现');
-};
+const showEmojiPanel = ref(false)
+const emojiList = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
+  '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
+  '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬',
+  '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗',
+  '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯',
+  '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
+  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈',
+  '👿', '👹', '👺', '💀', '👻', '👽', '🤖', '💩', '😺', '😸',
+  '😹', '😻', '😼', '😽', '🙀', '😿', '😾'
+]
+
+// 切换表情面板
+const toggleEmojiPanel = () => {
+  showEmojiPanel.value = !showEmojiPanel.value
+}
+
+// 关闭表情面板（点击外部）
+const handleClickOutside = (event) => {
+  if (showEmojiPanel.value) {
+    const panel = document.querySelector('.emoji-panel')
+    const btn = document.querySelector('.toolbar-btn[title="表情"]')
+    if (panel && !panel.contains(event.target) && btn && !btn.contains(event.target)) {
+      showEmojiPanel.value = false
+    }
+  }
+}
+
+// 插入表情到输入框
+const insertEmoji = (emoji) => {
+  inputText.value += emoji
+  inputRef.value?.focus()
+  showEmojiPanel.value = false
+}
 
 const aiChatLoading = ref(false)
 const handleAIChat = async () => {
