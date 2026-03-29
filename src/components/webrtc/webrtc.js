@@ -2,11 +2,19 @@ import { ref, onUnmounted } from 'vue';
 import { getSocket } from '@/utils/socket';
 
 export function useWebRTCCall(options = {}) {
-  const {
-    onRemoteStream,        // 收到远端流时的回调
-    onCallConnected,        // 通话连接成功回调
-    stunServers = ['stun:stun.l.google.com:19302'] // 默认STUN
-  } = options;
+const {
+  onRemoteStream,
+  onCallConnected,
+  stunServers = [
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302',
+    'stun:stun3.l.google.com:19302',
+    'stun:stun4.l.google.com:19302',
+    'stun:stun.stunprotocol.org:3478',
+    'stun:stun.voipbuster.com:3478'
+  ]
+} = options;
 
   const socket = getSocket();
   const peerConnection = ref(null);
