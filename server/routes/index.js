@@ -7,6 +7,8 @@ const contactController = require('../controllers/contact')
 const SessionController = require('../controllers/session'); // 引入会话控制器
 const MessageController = require('../controllers/message'); // 引入消息控制器
 const fileController = require('../controllers/file')
+const aiController = require('../controllers/ai')
+
 const router = new Router()
 
 // 认证相关路由
@@ -38,6 +40,8 @@ router.put('/sessions/:sessionId/read', authMiddleware, SessionController.update
 router.get('/messages', authMiddleware, MessageController.getMessages)
 // 文件相关路由
 router.post('/file/upload', authMiddleware, uploadFile, fileController.uploadFile)
+// 代理相关路由
+router.get('/ai/chat', authMiddleware, aiController.AIChat)
 
 
 module.exports = router

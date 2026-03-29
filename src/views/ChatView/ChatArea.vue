@@ -64,6 +64,7 @@
         <div class="toolbar-left">
           <button class="toolbar-btn" title="表情" @click="handleEmoji"><Smile /></button>
           <button class="toolbar-btn" title="文件" @click="triggerFileSelect(false)"><FolderClosed /></button>
+          <button class="toolbar-btn" title="AI帮聊" @click="handleAIChat"><Bot v-if="!aiChatLoading" /><Loader v-else /></button>
         </div>
         <div class="toolbar-right">
           <button class="toolbar-btn" title="在线快传" @click="triggerFileSelect(true)"><Zap /></button>
@@ -106,7 +107,8 @@ import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
-import { Smile, FolderClosed, Zap, Phone, Video } from '@lucide/vue'
+import { Smile, FolderClosed, Bot, Loader, Zap, Phone, Video } from '@lucide/vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
@@ -255,6 +257,28 @@ const handleEmoji = () => {
   console.log('表情功能待实现');
 };
 
+const aiChatLoading = ref(false)
+const handleAIChat = async () => {
+
+  // 显示加载状态（例如全局 loading 或按钮禁用）
+  aiChatLoading.value = true
+  try {
+    const res = await request.get('/ai/chat', { params: { sessionId: sessionId.value } });
+    if (res.success) {
+      console.log('AI回复:', res.reply);
+    } else {
+      ElMessage.error('获取AI回复失败，请稍后重试')
+    }
+    inputText.value = res.reply
+    // 显示生成的回复（例如弹窗询问是否发送）
+
+  } catch (error) {
+    console.error('AI 回复生成失败:', error)
+    ElMessage.error('生成回复失败，请稍后重试')
+  } finally {
+    aiChatLoading.value = false
+  }
+}
 const fileInput = ref(null)
 
 const triggerFileSelect = (type) => {
