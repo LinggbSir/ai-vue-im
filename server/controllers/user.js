@@ -34,13 +34,13 @@ const updateUserAvatar = async (ctx) => {
     return
   }
   try {
-    // 生成可访问的 URL（假设后端静态服务）
+    // 生成可访问的 URL
     const baseUrl = process.env.BASE_URL
     const avatarUrl = `${baseUrl}/uploads/avatar/${file.filename}`
 
     // 更新数据库（示例）
     const userId = ctx.state.user.id
-    await userModel.updateUserAvatar(userId, avatarUrl) // 需要你实现
+    await userModel.updateUserAvatar(userId, avatarUrl) 
 
     ctx.body = {
       success: true,
