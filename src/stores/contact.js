@@ -19,7 +19,6 @@ export const useContactStore = defineStore('contact', () => {
       loaded.value = true
       console.log(' store contactList:', contactList.value)
     } else {
-      throw new Error(res.error || '获取联系人列表失败')
       ElMessage.error(res.error || '获取联系人列表失败')
     }
     loading.value = false

@@ -33,16 +33,21 @@
 
       <!-- 底部操作按钮 -->
       <div class="action-buttons">
-        <button v-if="user.isFriend" class="action-btn" @click="goToChat">
+        <button class="action-btn" @click="goToChat">
           <MessageCircle />
         </button>
-        <button v-if="user.isFriend" class="action-btn" @click="startAudioCall">
+        <button v-if="onlineStatus[user.id]" class="action-btn" title="语音通话" @click="startAudioCall">
           <Phone />
         </button>
-        <button v-if="user.isFriend" class="action-btn" @click="startVideoCall">
+        <button v-else :disabled title="语音通话, 该用户当前不在线" class="action-btn-disabled">
+          <PhoneOff />
+        </button>
+        <button v-if="onlineStatus[user.id]" class="action-btn" title="视频通话" @click="startVideoCall">
           <Video />
         </button>
-        <button v-else class="action-btn add-btn" @click="addFriend">添加好友</button>
+        <button v-else :disabled title="视频通话, 该用户当前不在线" class="action-btn-disabled">
+          <VideoOff />
+        </button>
       </div>
     </div>
     <div v-else class="empty-tip">
@@ -57,7 +62,8 @@ import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { useWebRTCStore } from '@/stores/webrtc'
-import { MessageCircle, Phone, Video } from '@lucide/vue'
+import { useContactStore } from '@/stores/contact'
+import { MessageCircle, Phone, Video, PhoneOff, VideoOff } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,6 +73,8 @@ const loading = ref(false)
 const defaultAvatar = 'https://via.placeholder.com/100'
 
 const callStore = useWebRTCStore()
+const contactStore = useContactStore()
+const { onlineStatus } = contactStore
 
 const fetchUserInfo = async (id) => {
   if (!id) {
@@ -100,10 +108,6 @@ const startVideoCall = () => {
   callStore.startCall('video', userId.value)
 }
 
-const addFriend = () => {
-  // TODO: 发送好友申请
-  ElMessage.info('发送好友申请')
-}
 
 const editRemark = () => {
   // TODO: 弹出输入框修改备注
@@ -212,7 +216,7 @@ watch(() => route.params.id, (newId) => {
   justify-content: center;
 }
 
-.action-btn {
+.action-btn, .action-btn-disabled {
   padding: 8px 20px;
   background-color: #f5f5f5;
   border: none;

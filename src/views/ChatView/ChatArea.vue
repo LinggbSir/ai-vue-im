@@ -76,10 +76,15 @@
           <button class="toolbar-btn" title="文件" @click="triggerFileSelect(false)"><FolderClosed /></button>
           <button class="toolbar-btn" title="AI帮聊" @click="handleAIChat"><Bot v-if="!aiChatLoading" /><Loader v-else /></button>
         </div>
-        <div class="toolbar-right">
-          <button class="toolbar-btn" title="在线快传" @click="triggerFileSelect(true)"><Zap /></button>
-          <button class="toolbar-btn" title="音频通话" @click="startAudioCall"><Phone /></button>
-          <button class="toolbar-btn" title="视频通话" @click="startVideoCall"><Video /></button>
+        <div class="toolbar-right" v-if="onlineStatus[route.params.targetId]">
+          <button class="toolbar-btn" title="在线快传"  @click="triggerFileSelect(true)"><Zap /></button>
+          <button class="toolbar-btn" title="语音通话"  @click="startAudioCall"><Phone /></button>
+          <button class="toolbar-btn" title="视频通话"  @click="startVideoCall"><Video /></button>
+        </div>
+        <div class="toolbar-right" v-else>
+          <button class="toolbar-btn-disabled" title="在线快传, 对方不在线，无法使用此功能" disabled><ZapOff /></button>
+          <button class="toolbar-btn-disabled" title="语音通话, 对方不在线，无法使用此功能" disabled><PhoneOff /></button>  
+          <button class="toolbar-btn-disabled" title="视频通话, 对方不在线，无法使用此功能" disabled><VideoOff /></button>
         </div>
       </div>
 
@@ -110,19 +115,20 @@
         <span class="close" @click="videoVisible = false">✕</span>
       </div>
   </div>
-  <div v-else class="loading">请选择聊天对象</div>
+  <div v-else class="empty-tip">请选择聊天对象</div>
 </template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
-import { Smile, FolderClosed, Bot, Loader, Zap, Phone, Video } from '@lucide/vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Smile, FolderClosed, Bot, Loader, Zap, ZapOff, Phone, PhoneOff, Video, VideoOff } from '@lucide/vue'
+import { ElMessage } from 'element-plus'
 
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
 import { useWebRTCStore } from '@/stores/webrtc'
+import { useContactStore } from '@/stores/contact'
 
 
 import { getSocket } from '@/utils/socket'
@@ -131,9 +137,12 @@ import request from '@/utils/request'
 const route = useRoute()
 const authStore = useAuthStore()
 const messageStore = useMessageStore()
+const contactStore = useContactStore()
 
 
 const { messagesBySession, loadingMoreBySession, hasMoreBySession } = storeToRefs(messageStore)
+const { onlineStatus } = storeToRefs(contactStore)
+
 const { userInfo } = storeToRefs(authStore)
 
 const currentUserId = userInfo.value.id
@@ -553,7 +562,17 @@ const downloadFile = (fileInfo) => {
 }
 
 .toolbar-btn {
-  color: #818181;          /* 初始图标颜色，根据你的设计可调整 */
+  color: #818181;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.toolbar-btn-disabled {
+  color: #818181;
   background: none;
   border: none;
   font-size: 20px;
@@ -797,5 +816,10 @@ const downloadFile = (fileInfo) => {
 /* 可选：针对自己发送的文件消息，如果需要不同边框颜色，可以单独设置 */
 .self .generic-file {
   border-color: #b0b0b0;         /* 自己消息的边框可以更深或更浅，根据喜好调整 */
+}
+.empty-tip {
+  text-align: center;
+  color: #999;
+  padding: 40px;
 }
 </style>
