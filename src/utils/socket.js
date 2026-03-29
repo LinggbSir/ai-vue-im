@@ -8,7 +8,7 @@ export const initSocket = () => {
   const token = userStore.token || localStorage.getItem('token');
   if (!token) return null;
 
-  socket = io('window.location.origin', {
+  socket = io(window.location.origin, {
     auth: { token },
     transports: ['websocket'],
   });
