@@ -23,7 +23,7 @@ async function uploadFile(ctx) {
 
   const userId = ctx.state.user.id; // 从 JWT 中获取
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  const fileUrl = `${baseUrl}/file/${file.filename}`;
+  const fileUrl = `${baseUrl}/uploads/file/${file.filename}`;
   let thumbnailUrl = '';
 
     // 确保 thumb 目录存在
@@ -36,7 +36,7 @@ async function uploadFile(ctx) {
     await sharp(file.path)
       .resize(200, 200, { fit: 'cover' })
       .toFile(thumbnailPath);
-    thumbnailUrl = `${baseUrl}/thumb/thumb_${file.filename}`;
+    thumbnailUrl = `${baseUrl}/uploads/thumb/thumb_${file.filename}`;
   } else if (file.mimetype.startsWith('video/')) {
     // 提取第一帧
     const thumbnailPath = path.join(uploadDir, 'thumb_' + file.filename + '.jpg');
