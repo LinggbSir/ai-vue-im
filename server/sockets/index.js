@@ -135,10 +135,10 @@ module.exports = (io) => {
       }
     });
     socket.on('webrtc-offer-file', async (data) => {
-      const { to, offer } = data; // to: 接收方用户ID, offer: SDP Offer
+      const { to, offer, fileInfo } = data; // to: 接收方用户ID, offer: SDP Offer
       const from = socket.userId;
       const offerValid = offer !== undefined
-      console.log('接收 WebRTC Offer-file:', { from, to, offerValid });
+      console.log('接收 WebRTC Offer-file:', { from, to, fileInfo, type: offerValid });
       
       if (!to || !offer) return;
 
@@ -147,7 +147,7 @@ module.exports = (io) => {
         const targetSocketId = userSockets.get(to);
         if (targetSocketId) {
           console.log('转发offer-file:');
-          io.to(targetSocketId).emit('webrtc-offer-file', { from, offer });
+          io.to(targetSocketId).emit('webrtc-offer-file', { from, offer, fileInfo });
         } else {
           // 用户不在线，Offer 已存入数据库，下次上线可拉取
           console.log('用户不在线，Offer 已保存');

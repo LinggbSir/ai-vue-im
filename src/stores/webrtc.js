@@ -24,7 +24,6 @@ export const useWebRTCStore = defineStore('webrtc', () => {
     file.value = f
     targetId.value = id
     isFileSending.value = true
-    console.log('startSendingFile', f, id, isFileSending.value)
   }
 
   const clearSendingFile = () => {
@@ -40,5 +39,16 @@ export const useWebRTCStore = defineStore('webrtc', () => {
     isFileSending.value = false
   }
 
-  return { callType, targetId, isCallActive, file, isFileSending, startCall, clearCall, startSendingFile, clearSendingFile, clearWebRTCState }
+  return { 
+    callType, 
+    targetId, 
+    isCallActive, 
+    file, 
+    isFileSending, 
+    startCall, 
+    clearCall, 
+    startSendingFile, 
+    clearSendingFile,  
+    clearWebRTCState
+   }
 })

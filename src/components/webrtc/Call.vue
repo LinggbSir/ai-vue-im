@@ -3,7 +3,7 @@
     <IncomingCallDialog
       :visible="showIncoming"
       :caller-name="callerInfo?.nick_name || '未知'"
-      :caller-avatar="callerInfo?.avatar || '/default-avatar.jpg'"
+      :caller-avatar="callerInfo?.avatar || '/default_avatar.jpg'"
       :caller-id="callerInfo?.id || 'unknown'"
       :type="callType"
       @accept="acceptCall"

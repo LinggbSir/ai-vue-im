@@ -18,6 +18,7 @@ export function useWebRTCCall(options = {}) {
   const dataChannel = ref(null)
   const incomingFiles = ref({}) // 用于存储接收中的文件信息
   const fileTransferProgress = ref(0) // 可选：当前文件传输进度（0-100）
+  const downloadLink = ref(null)
 
   // 创建RTCPeerConnection实例
   const createPeerConnection = () => {
@@ -289,7 +290,6 @@ export function useWebRTCCall(options = {}) {
       if (fileInfo.receivedChunks === fileInfo.totalChunks) {
         assembleFile(fileInfo)
         delete incomingFiles.value[message.fileId]
-        fileTransferProgress.value = 0
         endFileTransfer()
         socket.emit('webrtc-file-transfer-end', {
           to: remoteUserId.value,
@@ -303,11 +303,9 @@ export function useWebRTCCall(options = {}) {
     // 合并所有ArrayBuffer
     const blob = new Blob(fileInfo.chunks, { type: fileInfo.mimeType })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileInfo.name
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadLink.value = document.createElement('a')
+    downloadLink.value.href = url
+    downloadLink.value.download = fileInfo.name
     console.log('文件已保存:', fileInfo.name)
   }
 
@@ -318,7 +316,7 @@ export function useWebRTCCall(options = {}) {
     const channel = createFileChannel()
     const onChannelOpen = () => {
       console.log('数据通道已打开，开始发送文件');
-      transferFile(file, channel);
+      transferFile(file);
       channel.removeEventListener('open', onChannelOpen);
     };
     channel.addEventListener('open', onChannelOpen);
@@ -327,8 +325,14 @@ export function useWebRTCCall(options = {}) {
     await peerConnection.value.setLocalDescription(offer)
     socket.emit('webrtc-offer-file', {
       to: remoteUserId.value,
-      offer: offer.sdp
+      offer: offer.sdp,
+      fileInfo:{
+        name: file.name,
+        size: file.size,
+        mimeType: file.type || 'application/octet-stream',
+      }
     })
+    console.log('发送文件', file.name, file.size, file.type)
   }
 
   const transferFile = async (file) => {
@@ -410,5 +414,6 @@ export function useWebRTCCall(options = {}) {
     acceptFile,
     endFileTransfer,
     fileTransferProgress,
+    downloadLink,
   };
 }

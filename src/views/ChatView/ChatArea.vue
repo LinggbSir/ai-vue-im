@@ -63,9 +63,10 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <button class="toolbar-btn" title="表情" @click="handleEmoji"><Smile /></button>
-          <button class="toolbar-btn" title="文件" @click="triggerFileSelect"><FolderClosed /></button>
+          <button class="toolbar-btn" title="文件" @click="triggerFileSelect(false)"><FolderClosed /></button>
         </div>
         <div class="toolbar-right">
+          <button class="toolbar-btn" title="在线快传" @click="triggerFileSelect(true)"><Zap /></button>
           <button class="toolbar-btn" title="音频通话" @click="startAudioCall"><Phone /></button>
           <button class="toolbar-btn" title="视频通话" @click="startVideoCall"><Video /></button>
         </div>
@@ -105,7 +106,7 @@ import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
-import { Smile, FolderClosed, Phone, Video } from '@lucide/vue'
+import { Smile, FolderClosed, Zap, Phone, Video } from '@lucide/vue'
 
 import { useMessageStore } from '@/stores/message'
 import { useAuthStore } from '@/stores/auth'
@@ -142,6 +143,7 @@ const messageListRef = ref(null)
 const inputText = ref('')
 const sending = ref(false)
 const inputRef = ref(null)
+const fileTransferType = ref(false)
 
 // 初始化消息：首次加载最新的30条
 const loadInitialMessages = async () => {
@@ -255,13 +257,21 @@ const handleEmoji = () => {
 
 const fileInput = ref(null)
 
-const triggerFileSelect = () => {
+const triggerFileSelect = (type) => {
+  fileTransferType.value = type
   fileInput.value.click()
 }
 
 const handleFileSelected = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
+
+  if (fileTransferType.value) {
+    fileTransferType.value = false
+    webRTCStore.startSendingFile(file, targetId.value)
+    event.target.value = ''
+    return;
+  }
 
   // 生成临时ID
   const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -284,14 +294,8 @@ const handleFileSelected = async (event) => {
   // 添加到 store
   messageStore.addTempMessage(sessionId.value, tempId, tempMsg);
 
-  if (false) {
-    webRTCStore.startSendingFile(file, targetId.value)
-    console.log('通过WebRTC发送文件')
-    console.log(file.size)
-    window.file = file
-  } else {
-    sendFileByHttp(file)
-  }
+  await sendFileByHttp(file, tempId)
+  event.target.value = ''
 };
 const sendFileByHttp = async (file, tempId) => {
   // 上传文件
