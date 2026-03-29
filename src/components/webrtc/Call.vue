@@ -13,26 +13,18 @@
     <AudioCallDialog
       v-model:visible="showAudioCall"
       :remote-stream="remoteStream"
-      :avatar="targetAvatar"
-      :nickname="targetName"
+      :avatar="callerInfo?.avatar || '/default_avatar.jpg'"
+      :nickname="callerInfo?.nick_name || '未知'"
       :connected="callConnected"
-      :mic-enabled="micEnabled"
-      :speaker-enabled="speakerEnabled"
-      @toggle-mic="handleToggleMic"
-      @toggle-speaker="handleToggleSpeaker"
       @hangup="rejectCall"
     />
 
     <VideoCallDialog
       v-model:visible="showVideoCall"
       :remote-stream="remoteStream"
+      :avatar="callerInfo?.avatar || '/default_avatar.jpg'"
+      :nickname="callerInfo?.nick_name || '未知'"
       :connected="callConnected"
-      :mic-enabled="micEnabled"
-      :camera-enabled="cameraEnabled"
-      :speaker-enabled="speakerEnabled"
-      @toggle-mic="handleToggleMic"
-      @toggle-camera="handleToggleCamera"
-      @toggle-speaker="handleToggleSpeaker"
       @hangup="rejectCall"
     />
   </div>
@@ -73,8 +65,6 @@ const incomingCallData = ref(null)
 
 const showAudioCall = ref(false)
 const showVideoCall = ref(false)
-const targetName = ref('')
-const targetAvatar = ref('')
 
 // 远程流
 const remoteStream = inject('remoteStream')
@@ -83,7 +73,7 @@ const webrtc = inject('webrtc')
 
 // 麦克风开关控制本地音频轨道
 watch(micEnabled, (enabled) => {
-  if (webrtc.localStream?.valu) {
+  if (webrtc.localStream?.value) {
     webrtc.localStream.value.getAudioTracks().forEach(track => {
       track.enabled = enabled
     })
@@ -98,6 +88,7 @@ watch(cameraEnabled, (enabled) => {
     })
   }
 }, { immediate: true })
+
 
 // 处理麦克风开关事件
 const handleToggleMic = (val) => {
@@ -187,13 +178,6 @@ const handleVisibilityChange = () => {
 // 接通来电
 const acceptCall = () => {
   showIncoming.value = false
-  targetName.value = callerInfo.value.nick_name
-  targetAvatar.value = callerInfo.value.avatar
-  if (incomingCallData.value.type === 'audio') {
-    showAudioCall.value = true
-  } else if (incomingCallData.value.type === 'video') {
-    showVideoCall.value = true
-  }
   webrtc.acceptCall(callerInfo.value.id, incomingCallData.value.offer, incomingCallData.value.type)
 }
 
@@ -204,6 +188,7 @@ const endCall = () => {
   showVideoCall.value = false
   showIncoming.value = false
   incomingCallData.value = null
+  callConnected.value = false
   webRTCStore.clearCall()
   webrtc.endCall()
 }
@@ -215,6 +200,7 @@ const rejectCall = () => {
   showVideoCall.value = false
   showIncoming.value = false
   incomingCallData.value = null
+  callConnected.value = false
   webrtc.endCall()
   webRTCStore.clearCall()
   socket?.emit('call-end', { to: callerInfo.value?.id })
@@ -253,6 +239,7 @@ onUnmounted(() => {
   socket?.off('webrtc-offer', handleIncomingCall)
   socket?.off('call-end', endCall)
   stopRingtone()
+  endCall()
 })
 
 watch(() => webRTCStore.callType, (newType) => {
@@ -262,9 +249,15 @@ watch(() => webRTCStore.callType, (newType) => {
     }
 })
 
-watch(() => callConnected, (newVal) => {
+watch(callConnected, (newVal) => {
+  console.log('电话接通', newVal)
   if (newVal) {
     stopRingtone()
+    if (incomingCallData.value && incomingCallData.value.type === 'audio') {
+      showAudioCall.value = true
+    } else if (incomingCallData.value && incomingCallData.value.type === 'video') {
+      showVideoCall.value = true
+    }
   }
 })
 </script>

@@ -1,9 +1,9 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="video-dialog-overlay" @click.self="close">
+    <div v-if="visible" class="video-dialog-overlay">
       <div class="video-dialog" :class="{ connected: connected }">
         <!-- 关闭按钮（始终显示） -->
-        <button class="close-btn" @click="close">✕</button>
+        <button class="close-btn" @click="hangup">✕</button>
 
         <!-- 未接通时显示：头像、昵称、状态提示 -->
         <template v-if="!connected">
@@ -14,7 +14,7 @@
           <p class="status">等待对方接受邀请...</p>
         </template>
 
-        <!-- 视频区域（未接通时显示占位符，接通后铺满弹框） -->
+        <!-- 视频区域（接通后铺满整个弹框） -->
         <div class="video-container" v-if="connected">
           <video
             ref="remoteVideoRef"
@@ -22,13 +22,9 @@
             playsinline
             class="remote-video"
           ></video>
-          <!-- <div v-else class="no-video-placeholder">
-            <span class="camera-icon">📹</span>
-            <p>对方未接通</p>
-          </div> -->
         </div>
 
-        <!-- 底部控制栏（始终显示，接通后悬浮） -->
+        <!-- 底部控制栏（始终显示，接通后悬浮在视频上） -->
         <div class="controls">
           <div class="row first-row">
             <div class="control-item" @click="toggleMic">
@@ -79,21 +75,17 @@ const props = defineProps({
   remoteStream: MediaStream,
   connected: Boolean,
   avatar: String,
-  nickname: String,
-  micEnabled: { type: Boolean, default: true },
-  cameraEnabled: { type: Boolean, default: true },
-  speakerEnabled: { type: Boolean, default: true }
+  nickname: String
 })
 
 const emit = defineEmits([
-  'update:visible',
-  'toggleMic',
-  'toggleCamera',
-  'toggleSpeaker',
   'hangup'
 ])
 
 const remoteVideoRef = ref(null)
+const micEnabled = ref(true)
+const cameraEnabled = ref(true)
+const speakerEnabled = ref(true)
 
 const bindRemoteStream = () => {
   if (remoteVideoRef.value && props.remoteStream) {
@@ -106,38 +98,41 @@ const bindRemoteStream = () => {
   return false
 }
 
-watch(() => props.remoteStream, (stream) => {
-  if (!bindRemoteStream()) {
-    console.log('视频元素尚未准备好，等待 connected')
-  }
-}, { immediate: true })
-
 watch(() => props.connected, (connected) => {
   if (connected) {
     nextTick(() => bindRemoteStream())
   }
 })
 
-watch(() => props.speakerEnabled, (enabled) => {
-  if (remoteVideoRef.value) {
-    remoteVideoRef.value.muted = !enabled
+
+const toggleMic = () => {
+  micEnabled.value = !micEnabled.value
+  if (webrtc.localStream?.value) {
+    webrtc.localStream.value.getAudioTracks().forEach(track => {
+      track.enabled = micEnabled.value
+    })
   }
-}, { immediate: true })
-
-const close = () => {
-  emit('update:visible', false)
 }
-
-const toggleMic = () => emit('toggleMic', !props.micEnabled)
-const toggleCamera = () => emit('toggleCamera', !props.cameraEnabled)
-const toggleSpeaker = () => emit('toggleSpeaker', !props.speakerEnabled)
-
+const toggleCamera = () => {
+  cameraEnabled.value = !cameraEnabled.value
+  if (webrtc.localStream?.value) {
+    webrtc.localStream.value.getVideoTracks().forEach(track => {
+      track.enabled = cameraEnabled.value
+    })
+  }
+}
+const toggleSpeaker = () => {
+  speakerEnabled.value = !speakerEnabled.value
+  if (remoteVideoRef.value) {
+    remoteVideoRef.value.muted = !speakerEnabled.value
+    console.log(remoteVideoRef.value)
+  }
+}
 const hangup = () => {
   emit('hangup')
   if (remoteVideoRef.value) {
     remoteVideoRef.value.srcObject = null
   }
-  close()
 }
 </script>
 
@@ -167,11 +162,14 @@ const hangup = () => {
   overflow: hidden;
 }
 
+/* 接通后隐藏头像、昵称、状态 */
 .video-dialog.connected .avatar-container,
 .video-dialog.connected .nickname,
 .video-dialog.connected .status {
   display: none;
 }
+
+/* 接通后视频容器铺满弹框 */
 .video-dialog.connected .video-container {
   position: absolute;
   top: 0;
@@ -181,17 +179,74 @@ const hangup = () => {
   background-color: #000;
   z-index: 1;
 }
-.video-dialog.connected .close-btn {
-  z-index: 3;
+
+/* 控制栏始终固定在底部，悬浮在视频上方 */
+.controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* backdrop-filter: blur(8px); */
+  border-radius: 0 0 24px 24px;
+  z-index: 2;
+  transition: all 0.2s;
 }
-.video-dialog.connected .label {
-  color: #fff;
+
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
 }
-.video-dialog.connected .icon {
-  background-color: rgba(255, 255, 255, 0.2);
+
+.first-row {
+  justify-content: space-around;
 }
-.video-dialog.connected .icon-off {
-  background-color: rgba(0, 0, 0, 0.5);
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.control-item:hover {
+  opacity: 0.8;
+}
+
+.control-item.cancel .icon {
+  background-color: #f44336;
+  color: white;
+  border: none;
+}
+
+.icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.icon-off {
+  background-color: #e0e0e0;
+  opacity: 0.7;
+  border-color: #999;
+}
+
+.label {
+  font-size: 14px;
+  color: #666;
 }
 
 .close-btn {
@@ -254,88 +309,5 @@ const hangup = () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.no-video-placeholder {
-  text-align: center;
-  color: #999;
-}
-.camera-icon {
-  font-size: 100px;
-  display: block;
-  margin-bottom: 10px;
-}
-.no-video-placeholder p {
-  font-size: 16px;
-  margin: 0;
-}
-
-.controls {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background-color: #fff;
-  transition: all 0.2s;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  z-index: 2;
-  border-radius: 0 0 24px 24px;
-  backdrop-filter: blur(8px);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-}
-
-.first-row {
-  justify-content: space-around;
-}
-
-.control-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.control-item:hover {
-  opacity: 0.8;
-}
-
-.control-item.cancel .icon {
-  background-color: #f44336;
-  color: white;
-  border: none;
-}
-
-.icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  border: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.icon-off {
-  background-color: #e0e0e0;
-  opacity: 0.7;
-  border-color: #999;
-}
-
-.label {
-  font-size: 14px;
-  color: #666;
 }
 </style>

@@ -1,9 +1,9 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="call-dialog-overlay" @click.self="close">
+    <div v-if="visible" class="call-dialog-overlay">
       <div class="call-dialog">
         <!-- 关闭按钮（可选） -->
-        <button class="close-btn" @click="close">✕</button>
+        <button class="close-btn" @click="hangup">✕</button>
 
         <!-- 头像区域 -->
         <div class="avatar-container">
@@ -75,23 +75,20 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  // 麦克风开关状态（由父组件控制）
-  micEnabled: {
-    type: Boolean,
-    default: true
-  },
-  // 扬声器开关状态（由父组件控制）
-  speakerEnabled: {
-    type: Boolean,
-    default: true
-  },
   remoteStream: {
     type: MediaStream,
     default: null
   }
 })
 
+const emit = defineEmits([
+  'hangup'
+])
+
+
 const remoteAudioRef = ref(null)
+const speakerEnabled = ref(true)
+const micEnabled = ref(true)
 
 // 当远程流变化时，绑定到 audio 元素
 watch(() => props.remoteStream, (stream) => {
@@ -104,33 +101,24 @@ watch(() => props.remoteStream, (stream) => {
   }
 }, { immediate: true })
 
-// 扬声器开关控制静音
-watch(props.speakerEnabled, (enabled) => {
-  if (remoteAudioRef.value) {
-    remoteAudioRef.value.muted = !enabled
-  }
-}, { immediate: true })
-
-const emit = defineEmits([
-  'update:visible',
-  'toggle-mic',
-  'toggle-speaker',
-  'hangup'
-])
-
-// 关闭弹框（通知父组件）
-const close = () => {
-  emit('update:visible', false)
-}
 
 // 切换麦克风
 const toggleMic = () => {
-  emit('toggle-mic', !props.micEnabled)
+  micEnabled.value = !micEnabled.value
+  if (webrtc.localStream?.value) {
+    webrtc.localStream.value.getAudioTracks().forEach(track => {
+      track.enabled = micEnabled.value
+    })
+  }
 }
 
 // 切换扬声器
 const toggleSpeaker = () => {
-  emit('toggle-speaker', !props.speakerEnabled)
+  speakerEnabled.value = !speakerEnabled.value
+  if (remoteAudioRef.value) {
+    remoteAudioRef.value.muted = !speakerEnabled.value
+    console.log(remoteAudioRef.value)
+  }
 }
 
 // 取消通话
@@ -139,7 +127,6 @@ const hangup = () => {
   if (remoteAudioRef.value) {
     remoteAudioRef.value.srcObject = null
   }
-  close()
 }
 </script>
 
