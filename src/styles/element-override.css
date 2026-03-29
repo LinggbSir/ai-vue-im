@@ -1,0 +1,6 @@
+/* 在全局样式文件中覆盖CSS变量 */
+:root {
+  --el-color-primary: #07c160;      /* 覆盖主色调 */
+  --el-switch-on-color: #07c160;    /* 覆盖开关激活时的颜色 */
+  --el-border-radius-base: 8px;      /* 覆盖基础圆角 */
+}

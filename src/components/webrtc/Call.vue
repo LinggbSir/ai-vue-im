@@ -134,13 +134,14 @@ const initiateCall = (targetId, type = 'audio') => {
     showVideoCall.value = true
   }
   webrtc.startCall(targetId, type)
+  playRingtone()
 }
 
 // 处理来电
 const handleIncomingCall = (data) => {
   incomingCallData.value = data
   callerInfo.value = contactList.value.find(c => c.id === data.from)
-
+  playRingtone()
   if (document.visibilityState === 'visible') {
     showIncoming.value = true
   } else {
@@ -198,6 +199,7 @@ const acceptCall = () => {
 
 // 被动结束通话
 const endCall = () => {
+  stopRingtone()
   showAudioCall.value = false
   showVideoCall.value = false
   showIncoming.value = false
@@ -208,6 +210,7 @@ const endCall = () => {
 
 // 主动结束通话
 const rejectCall = () => {
+  stopRingtone()
   showAudioCall.value = false
   showVideoCall.value = false
   showIncoming.value = false
@@ -215,6 +218,26 @@ const rejectCall = () => {
   webrtc.endCall()
   webRTCStore.clearCall()
   socket?.emit('call-end', { to: callerInfo.value?.id })
+}
+
+let ringtone = null
+
+// 播放来电铃声（循环）
+const playRingtone = () => {
+  const settings = JSON.parse(localStorage.getItem('notificationSettings') || '{}')
+  if (settings.callSound === false) return // 用户关闭了通话提示音
+  if (ringtone) stopRingtone()
+  ringtone = new Audio('/来电铃声_echo.mp3') // 确保文件在 public/sounds/ 下
+  ringtone.loop = true
+  ringtone.play().catch(e => console.warn('来电铃声播放失败', e))
+}
+
+// 停止来电铃声
+const stopRingtone = () => {
+  if (ringtone) {
+    ringtone.pause()
+    ringtone = null
+  }
 }
 
 onMounted(() => {
@@ -229,6 +252,7 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   socket?.off('webrtc-offer', handleIncomingCall)
   socket?.off('call-end', endCall)
+  stopRingtone()
 })
 
 watch(() => webRTCStore.callType, (newType) => {
@@ -238,6 +262,11 @@ watch(() => webRTCStore.callType, (newType) => {
     }
 })
 
+watch(() => callConnected, (newVal) => {
+  if (newVal) {
+    stopRingtone()
+  }
+})
 </script>
 
 <style scoped>

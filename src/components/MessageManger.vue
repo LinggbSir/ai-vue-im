@@ -1,4 +1,5 @@
 <template>
+  <!-- <audio ref="remoteAudioRef" autoplay style="display: none"></audio> -->
 </template>
 <script setup>
 import { onMounted, onUnmounted, watch } from 'vue'
@@ -32,6 +33,13 @@ const handleNewMessage = async (msg) => {
       await sessionStore.updateSessionForLastRead(msg.session_id, msg)
     } else {
       // 接收方
+      // 消息通知音
+      const settings = JSON.parse(localStorage.getItem('notificationSettings') || '{}')
+      if (settings.newMessageSound !== false) {
+        const audio = new Audio('/消息提示音_echo.mp3')
+        audio.play().catch(e => console.warn('提示音播放失败', e))
+      }
+
       await sessionStore.updateSessionForUnreadCount(msg.session_id, msg)
     }
   }
